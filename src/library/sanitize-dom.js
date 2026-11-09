@@ -1,5 +1,6 @@
 import {SENSITIVE,MARK,safeText,safeURL} from './privacy-policy.js';
 import {cleanStructured} from './structured-data.js';
+import {documentFor} from './dom-context.js';
 export function sanitizeHTML(html,base){
  const counts={metaValues:0,scripts:0,attributes:0,personalRegions:0,classTokens:0,structuredAttributes:0,embeddedHTML:0,depthLimits:0};
  const parse=s=>new DOMParser().parseFromString(s,'text/html');
@@ -9,7 +10,8 @@ export function sanitizeHTML(html,base){
   const doc=parse(source);cleanRoot(doc,depth);return '<!doctype html>\n'+doc.documentElement.outerHTML;
  }
  function cleanRoot(root,depth){
-  if(depth>3){root.replaceChildren(root.ownerDocument.createTextNode(MARK));counts.depthLimits++;return;}
+  const owner=documentFor(root);
+  if(depth>3){root.replaceChildren(owner.createTextNode(MARK));counts.depthLimits++;return;}
   for(const el of root.querySelectorAll('meta')){if(el.hasAttribute('charset'))continue;const name=el.getAttribute('name')||el.getAttribute('property')||'';if(!/^(title|description|viewport|robots|keywords|theme-color|og:(title|description|type|site_name|image|url)|twitter:(card|title|description|image))$/i.test(name)||SENSITIVE.test(name)){el.setAttribute('content',MARK);counts.metaValues++;}}
   for(const el of root.querySelectorAll('script')){el.textContent='';counts.scripts++;}
   for(const el of root.querySelectorAll('#nav-tools,#nav-global-location-slot,#glow-ingress-block,#contextualIngressPtLink,#contextualIngressPt,#deliveryBlockMessage,#deliveryBlockMessage_feature_div,.a-profile-content')){el.replaceChildren(el.ownerDocument.createTextNode(MARK));for(const a of ['aria-label','title','data-label'])if(el.hasAttribute(a))el.setAttribute(a,MARK);counts.personalRegions++;}
@@ -31,8 +33,8 @@ export function sanitizeHTML(html,base){
    if(el.matches('input,textarea,select,option')){for(const a of ['value','checked','selected'])el.removeAttribute(a);if(el.matches('textarea,option'))el.textContent=MARK;}
    if(el.tagName==='TEMPLATE')cleanRoot(el.content,depth+1);
   }
-  const comments=root.ownerDocument.createTreeWalker(root,NodeFilter.SHOW_COMMENT);const remove=[];while(comments.nextNode())remove.push(comments.currentNode);for(const n of remove)n.remove();
-  const walker=root.ownerDocument.createTreeWalker(root,NodeFilter.SHOW_TEXT);while(walker.nextNode()){const n=walker.currentNode;n.nodeValue=safeText(n.nodeValue).replace(/\b(offerListingId|sessionId|csrfToken|token)\s*[:=]\s*[^,\s\]}&]+/gi,'$1='+MARK);}
+  const comments=owner.createTreeWalker(root,NodeFilter.SHOW_COMMENT);const remove=[];while(comments.nextNode())remove.push(comments.currentNode);for(const n of remove)n.remove();
+  const walker=owner.createTreeWalker(root,NodeFilter.SHOW_TEXT);while(walker.nextNode()){const n=walker.currentNode;n.nodeValue=safeText(n.nodeValue).replace(/\b(offerListingId|sessionId|csrfToken|token)\s*[:=]\s*[^,\s\]}&]+/gi,'$1='+MARK);}
  }
  return {html:cleanDoc(html,0),counts};
 }

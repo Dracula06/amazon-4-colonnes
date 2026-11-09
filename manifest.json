@@ -1,8 +1,8 @@
 {
  "manifest_version":3,
  "name":"Amazon — disposition et badges",
- "version":"0.7.0",
- "description":"Captures nettoyées récursivement et résumé contextualisé des offres.",
+ "version":"0.7.1",
+ "description":"Correction du parcours DOM des captures avec nettoyage imbriqué.",
  "permissions":["storage","activeTab","scripting"],
  "optional_host_permissions":["https://api.github.com/*"],
  "action":{"default_title":"Partager cette page Amazon sur GitHub"},

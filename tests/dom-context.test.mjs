@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {documentFor} from '../src/library/dom-context.js';
+const doc={nodeType:9,ownerDocument:null,createTreeWalker:()=>({})};
+assert.equal(documentFor(doc),doc);
+assert.equal(documentFor({nodeType:1,ownerDocument:doc}),doc);
+assert.equal(documentFor({nodeType:11,ownerDocument:doc}),doc);
+assert.equal(typeof documentFor(doc).createTreeWalker,'function');
+assert.throws(()=>documentFor(null),/absente/);
+assert.throws(()=>documentFor({nodeType:11,ownerDocument:null}),/invalide/);
+console.log('6 assertions de selection du document OK');
