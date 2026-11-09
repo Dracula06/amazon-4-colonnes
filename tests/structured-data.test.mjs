@@ -1,0 +1,4 @@
+import assert from 'node:assert/strict';
+import {cleanStructured} from '../src/library/structured-data.js';
+const x=cleanStructured({asin:'B0HFZH1Z9G',price:440,token:'SECRET',offerListingId:'OFFER',nested:{pixelUrl:'TRACK',url:'https://www.amazon.fr/dp/X?token=bad',htmlContentEncoded:'HTML'},items:[{merchantName:'Amazon',sessionId:'SESSION'}]},{cleanHTML:()=>'<p>NETTOYE</p>'});
+assert.equal(x.asin,'B0HFZH1Z9G');assert.equal(x.price,440);assert.equal(x.token,'[RETIRE]');assert.equal(x.offerListingId,'[RETIRE]');assert.equal(x.nested.pixelUrl,'[RETIRE]');assert.equal(x.nested.url,'https://www.amazon.fr/dp/X');assert.equal(x.nested.htmlContentEncoded,'<p>NETTOYE</p>');assert.equal(x.items[0].merchantName,'Amazon');assert.equal(x.items[0].sessionId,'[RETIRE]');assert(!JSON.stringify(x).includes('SECRET'));console.log('10 assertions structures imbriquees OK');

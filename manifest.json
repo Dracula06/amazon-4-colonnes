@@ -1,8 +1,8 @@
 {
  "manifest_version":3,
  "name":"Amazon — disposition et badges",
- "version":"0.6.1",
- "description":"Partage filtré avec reprise des conflits GitHub et petits fragments lisibles.",
+ "version":"0.7.0",
+ "description":"Captures nettoyées récursivement et résumé contextualisé des offres.",
  "permissions":["storage","activeTab","scripting"],
  "optional_host_permissions":["https://api.github.com/*"],
  "action":{"default_title":"Partager cette page Amazon sur GitHub"},
