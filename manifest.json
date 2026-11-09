@@ -1,24 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Amazon — disposition et badges",
-  "version": "0.3.0",
-  "description": "Disposition 4 colonnes et indication locale de la logistique de l’offre sélectionnée.",
-  "permissions": [
-    "storage"
-  ],
-  "action": {
-    "default_popup": "popup.html"
-  },
-  "content_scripts": [
-    {
-      "matches": [
-        "https://www.amazon.fr/*"
-      ],
-      "js": [
-        "core.js",
-        "amazon.js"
-      ],
-      "run_at": "document_idle"
-    }
-  ]
+  "version": "0.4.0",
+  "description": "Disposition, badges et bibliothèque de pages Amazon.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "optional_host_permissions": ["https://api.github.com/*"],
+  "action": {"default_popup": "popup.html"},
+  "content_scripts": [{"matches": ["https://www.amazon.fr/*"], "js": ["core.js", "amazon.js"], "run_at": "document_idle"}]
 }

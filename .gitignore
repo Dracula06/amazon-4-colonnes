@@ -1,0 +1,12 @@
+# Archives brutes locales : garder de préférence hors du dépôt
+captures-brutes/
+raw-captures/
+*-brut-local-*.json
+*.har
+.env
+.env.*
+*.pem
+*.p12
+*.pfx
+node_modules/
+Gestion_Git.ps1.avant-correctif-*.bak
