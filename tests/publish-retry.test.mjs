@@ -1,0 +1,6 @@
+import assert from 'node:assert/strict';
+import {publishWithRetry} from '../src/library/publish-retry.js';
+async function scenario(mode){let head='base',patches=0,forced=false;const request=async(path,method='GET',body)=>{if(path==='/git/ref/heads/main')return {object:{sha:head}};if(path.startsWith('/git/commits/')&&method==='GET')return {tree:{sha:'tree-'+head}};if(path==='/git/trees')return {sha:'new-tree'};if(path==='/git/commits')return {sha:'commit-'+patches};if(path.startsWith('/compare/'))return {status:mode==='descendant'?'ahead':'diverged'};if(method==='PATCH'){patches++;forced=body.force;if(mode==='race'&&patches===1){head='external';throw Object.assign(Error('not fast forward'),{status:422})}if(mode==='invalid')throw Object.assign(Error('validation'),{status:422});if(mode==='lost'){head=body.sha;throw Error('network')}if(mode==='descendant'){head='later';throw Error('network')}head=body.sha;return {}}throw Error(path)};
+if(mode==='invalid'){await assert.rejects(publishWithRetry(request,[],'test',{sleep:async()=>{}}),/validation/);assert.equal(patches,1)}else{await publishWithRetry(request,[],'test',{sleep:async()=>{}});assert.equal(patches,mode==='race'?2:1)}assert.equal(forced,false);}
+for(const x of ['ok','race','invalid','lost','descendant'])await scenario(x);
+console.log('5 scenarios transport OK');
