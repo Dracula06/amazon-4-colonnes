@@ -1,0 +1,9 @@
+export function analyzeCapture(report){
+ const doc=new DOMParser().parseFromString(report.html,'text/html');
+ const all=[...doc.querySelectorAll('*')];
+ const named=[...doc.querySelectorAll('[data-feature-name],[data-widget-name]')];
+ const names=[...new Set(named.map(e=>e.getAttribute('data-feature-name')||e.getAttribute('data-widget-name')).filter(Boolean))];
+ const injected=all.filter(e=>/^alldebrid|^al-offers$|^al-badge$|^ald-other-offers$/.test(e.id)||String(e.className).includes('wtd-font')||[...e.attributes].some(a=>a.value.includes('chrome-extension://')));
+ const lazy=[...doc.querySelectorAll('.cr-lazy-widget')];
+ return {version:1,title:doc.querySelector('#productTitle')?.textContent.trim().slice(0,300)||doc.title.slice(0,300),counts:{elements:all.length,featureNodes:named.length,uniqueFeatureNames:names.length,explicitlyHidden:all.filter(e=>e.hasAttribute('hidden')||e.getAttribute('aria-hidden')==='true'||e.classList.contains('aok-hidden')||/display\s*:\s*none/i.test(e.getAttribute('style')||'')).length,lazyWidgets:lazy.length,emptyLazyWidgets:lazy.filter(e=>!e.textContent.trim()&&!e.children.length).length,reviewContainers:doc.querySelectorAll('[data-hook="reviewContainer"]').length,videos:doc.querySelectorAll('video').length,suspectedInjected:injected.length},featureExamples:names.slice(0,20),injectionExamples:injected.slice(0,10).map(e=>({tag:e.tagName,id:e.id.slice(0,80)})),captureState:{ourLayoutModified:!!report.metadata.extensionLayoutPresent,context:report.metadata.declaredContext||'unknown'},limits:['Présence DOM ne prouve ni visibilité effective ni fonctionnalité chargée','Détection des injections heuristique ; aucun bloc supprimé sur cette seule base','Les avis vidéo détaillés restent dans les fragments ; aucune interface vidéo éliminée ici','Exemples limités dans le résumé ; DOM intégral compacté présent dans les parties']};
+}
