@@ -1,10 +1,12 @@
 {
-  "manifest_version":3,
-  "name":"Amazon — disposition et badges",
-  "version":"0.4.1",
-  "description":"Bibliothèque Amazon FR ES IT UK DE ; disposition et badges sur FR.",
-  "permissions":["storage","activeTab","scripting"],
-  "optional_host_permissions":["https://api.github.com/*"],
-  "action":{"default_popup":"popup.html"},
-  "content_scripts":[{"matches":["https://www.amazon.fr/*"],"js":["core.js","amazon.js"],"run_at":"document_idle"}]
+ "manifest_version":3,
+ "name":"Amazon — disposition et badges",
+ "version":"0.5.0",
+ "description":"Un clic sur l’icône : capture filtrée vers GitHub. Bibliothèque FR ES IT UK DE.",
+ "permissions":["storage","activeTab","scripting"],
+ "optional_host_permissions":["https://api.github.com/*"],
+ "action":{"default_title":"Partager cette page Amazon sur GitHub"},
+ "background":{"service_worker":"src/quick-share/background.js","type":"module"},
+ "options_ui":{"page":"settings.html","open_in_tab":true},
+ "content_scripts":[{"matches":["https://www.amazon.fr/*"],"js":["core.js","amazon.js"],"run_at":"document_idle"}]
 }
