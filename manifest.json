@@ -1,8 +1,8 @@
 {
  "manifest_version":3,
  "name":"Amazon — disposition et badges",
- "version":"0.5.0",
- "description":"Un clic sur l’icône : capture filtrée vers GitHub. Bibliothèque FR ES IT UK DE.",
+ "version":"0.5.1",
+ "description":"Partage compact en un clic, fichiers de capture de 900000 octets maximum.",
  "permissions":["storage","activeTab","scripting"],
  "optional_host_permissions":["https://api.github.com/*"],
  "action":{"default_title":"Partager cette page Amazon sur GitHub"},
