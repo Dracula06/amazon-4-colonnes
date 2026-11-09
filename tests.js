@@ -1,0 +1,3 @@
+const cases=[["Expédié depuis Amazon", "Satawit", "fba"], ["Expédié par Amazon", "Vendu par Satawit", "fba"], ["Amazon", "Amazon Seconde main", "amazon"], ["Amazon", "Amazon", "amazon"], ["Amazon", "Amazon Warehouse", "amazon"], ["Boutique Exemple", "Boutique Exemple", "fbm"], ["Transporteur Boutique", "Boutique Exemple", "fbm"], ["", "Satawit", "unknown"], [" Expédié depuis  Amazon ", " Satawit ", "fba"]];
+const rows=cases.map(([s,v,w])=>{const r=ALCore.classify(s,v);if(r.kind!==w)throw Error(JSON.stringify({s,v,w,r}));return {ship:s,seller:v,expected:w,actual:r.kind}});
+if(typeof document!=="undefined")document.getElementById("results").textContent=JSON.stringify(rows,null,2);else console.log(JSON.stringify(rows));

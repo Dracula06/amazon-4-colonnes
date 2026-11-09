@@ -1,0 +1,9 @@
+CORRECTIF core.js 0.3.1 POUR L’EXTENSION UNIQUE 0.3.0
+
+Ce ZIP contient un fichier de mise à jour, pas une seconde extension.
+Remplacer core.js dans le dossier de l’extension 0.3.0 déjà installée, à côté de manifest.json. Cliquer Recharger dans chrome://extensions ou brave://extensions, puis recharger tous les onglets Amazon ouverts.
+Le numéro dans la carte de l’extension reste 0.3.0 ; le moteur seul passe à 0.3.1-core.
+
+Reconnaît Expédié et vendu par Amazon et Vendu et expédié par Amazon dans le message vendeur, même si le champ expéditeur est vide. Reconnaît aussi Vendu par X et expédié par Y. Si les données se contredisent, garde À VÉRIFIER. Préserve toutes les autres fonctions et autorisations.
+
+15 tests de classification exécutés avec Node.js : tous passent. Pas de test réel dans Chrome. Ce correctif ne change pas la recherche des éléments DOM ; il corrige la classification des valeurs déjà extraites, comme celle montrée dans votre capture.
