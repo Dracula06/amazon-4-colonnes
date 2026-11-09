@@ -1,0 +1,1 @@
+{"format":"amazon-capture-index-v1","encoding":"utf-8","reassembly":"Concatener data de chaque partie dans l ordre puis JSON.parse.","payloadBytes":1085193,"marketplace":"FR","asin":"B0HFZH1Z9G","parts":[{"name":"part-0001.json","bytes":900000},{"name":"part-0002.json","bytes":268468}]}
