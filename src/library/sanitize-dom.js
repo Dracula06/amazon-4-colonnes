@@ -1,9 +1,11 @@
 import {SENSITIVE,MARK,safeText,safeURL} from './privacy-policy.js';
 import {cleanStructured} from './structured-data.js';
 import {documentFor} from './dom-context.js';
+export const stripInlineHandlers = s => String(s || '').replace(/(\s+)on([a-z0-9_-]+)(\s*=\s*(?:'[^']*'|"[^"]*"|[^\s>]+))/gi, '$1data-blocked-on-$2$3');
+
 export function sanitizeHTML(html,base){
  const counts={metaValues:0,scripts:0,attributes:0,personalRegions:0,classTokens:0,structuredAttributes:0,embeddedHTML:0,depthLimits:0};
- const parse=s=>new DOMParser().parseFromString(s,'text/html');
+ const parse=s=>new DOMParser().parseFromString(stripInlineHandlers(s),'text/html');
  const decode=s=>{if(!/&(?:lt|gt|quot|amp|#\d+);/.test(s))return s;const t=document.createElement('textarea');t.innerHTML=s;return t.value;};
  function cleanDoc(source,depth){
   if(depth>3||source.length>4000000){counts.depthLimits++;return MARK;}

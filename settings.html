@@ -1,1 +1,150 @@
-<!doctype html><meta charset="utf-8"><title>Réglages Amazon</title><style>body{font:16px/1.6 system-ui;max-width:850px;margin:35px auto;padding:20px}label{display:block;margin:15px 0}input[type=password]{width:100%;padding:10px;box-sizing:border-box}button{padding:10px;margin-right:10px}pre{white-space:pre-wrap;background:#f4f4f4;padding:15px}</style><h1>Partage Amazon en un clic</h1><p>Après cette configuration, un clic sur l’icône de l’extension publie la copie filtrée de la page Amazon courante dans <strong>Dracula06/amazon-4-colonnes · main</strong>. Aucun partage déclenché par la simple navigation.</p><label>Jeton GitHub à permissions fines, limité à ce dépôt, Contents : Read and write<input id="token" type="password" autocomplete="off" placeholder="Saisir uniquement pour enregistrer ou remplacer le jeton"></label><p>Le jeton sera conservé dans le stockage local de cette extension dans votre profil navigateur, sans chiffrement propre à l’extension et sans synchronisation Chrome. Ne le partagez pas et ne l’enregistrez pas dans les fichiers du projet. Utilisez une expiration courte et révoquez-le en cas de doute.</p><label><input id="consent" type="checkbox"> J’autorise chaque clic sur l’icône à publier la copie filtrée de la page sur ce dépôt, sans aperçu supplémentaire. Je comprends que le filtre automatique peut laisser des données personnelles résiduelles. Je n’utilise pas ce bouton sur les pages de compte, de commande ou de paiement.</label><button id="save">Configurer le partage en un clic</button><button id="forget">Effacer le jeton et désactiver le partage</button><h2>État</h2><pre id="status"></pre><h2>Outils avancés</h2><p><a href="popup.html" target="_blank">Disposition, badges et ancien collecteur manuel</a></p><script type="module" src="src/quick-share/settings.js"></script>
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Réglages — Amazon 4 Colonnes & Outils</title>
+  <style>
+    body {
+      font: 15px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 820px;
+      margin: 30px auto;
+      padding: 20px;
+      color: #1e293b;
+      background: #f8fafc;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    h1 { font-size: 22px; margin-top: 0; color: #0f172a; }
+    h2 { font-size: 17px; margin-top: 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; color: #1e293b; }
+    label { display: block; margin: 14px 0 6px; font-weight: 500; }
+    input[type="text"], input[type="password"], input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+    .desc { font-size: 13px; color: #64748b; margin: 4px 0 12px; }
+    .btn-group { margin-top: 14px; display: flex; gap: 10px; }
+    button {
+      font: inherit;
+      padding: 9px 16px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    button:hover { background: #f1f5f9; }
+    button.primary { background: #5865f2; color: #ffffff; border-color: #4752c4; }
+    button.primary:hover { background: #4752c4; }
+    button.danger { color: #dc2626; border-color: #fca5a5; }
+    button.danger:hover { background: #fef2f2; }
+    pre {
+      background: #f1f5f9;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .check-label { display: flex; align-items: flex-start; gap: 10px; font-weight: normal; font-size: 13px; margin: 12px 0; }
+    .check-label input { margin-top: 3px; accent-color: #0284c7; }
+  </style>
+</head>
+<body>
+  <h1>Paramètres de l'extension Amazon</h1>
+
+  <!-- 1. Webhook Discord -->
+  <div class="card">
+    <h2>📢 Intégration Discord (Option A)</h2>
+    <p class="desc">Permet de partager instantanément une fiche analysée ou une capture d'offre dans un salon Discord via un Webhook officiel.</p>
+    
+    <label for="discordWebhook">URL du Webhook Discord</label>
+    <input id="discordWebhook" type="password" placeholder="https://discord.com/api/webhooks/123456789/..." autocomplete="off">
+    <div class="desc">Obtenu dans les paramètres de votre salon Discord > Intégrations > Webhooks. Le webhook est stocké localement dans votre profil Chrome.</div>
+
+    <div class="btn-group">
+      <button id="saveDiscord" class="primary">Enregistrer le Webhook</button>
+      <button id="testDiscord">Tester l'envoi</button>
+      <button id="clearDiscord" class="danger">Effacer</button>
+    </div>
+    <div id="discordStatus" class="desc" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- 2. Configuration d'affichage & Grille -->
+  <div class="card">
+    <h2>📐 Personnalisation d'affichage</h2>
+    <label for="minWidth">Largeur d'écran minimum pour les 4 colonnes (en pixels)</label>
+    <input id="minWidth" type="number" min="900" max="2500" step="50" value="1200">
+    <div class="desc">Valeur par défaut recommandée : <strong>1200 px</strong> (idéal pour les écrans 1080p avec zoom 125%).</div>
+    <div class="btn-group">
+      <button id="saveDisplay">Enregistrer la largeur</button>
+    </div>
+  </div>
+
+  <!-- 2b. Tags Amazon Partenaires par pays -->
+  <div class="card">
+    <h2>🏷️ Tags Amazon Partenaires (par pays)</h2>
+    <p class="desc">Identifiants de suivi par défaut utilisés pour générer les liens rapides affiliés lorsque SiteStripe n'est pas détecté ou en secours. Stockés uniquement localement dans votre profil navigateur.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">
+      <div>
+        <label for="tagFR">🇫🇷 France (FR)</label>
+        <input id="tagFR" type="text" placeholder="monid-21" autocomplete="off">
+      </div>
+      <div>
+        <label for="tagUK">🇬🇧 Royaume-Uni (UK)</label>
+        <input id="tagUK" type="text" placeholder="monid-21" autocomplete="off">
+      </div>
+      <div>
+        <label for="tagDE">🇩🇪 Allemagne (DE)</label>
+        <input id="tagDE" type="text" placeholder="monid-21" autocomplete="off">
+      </div>
+      <div>
+        <label for="tagES">🇪🇸 Espagne (ES)</label>
+        <input id="tagES" type="text" placeholder="monid-21" autocomplete="off">
+      </div>
+      <div>
+        <label for="tagIT">🇮🇹 Italie (IT)</label>
+        <input id="tagIT" type="text" placeholder="monid-21" autocomplete="off">
+      </div>
+    </div>
+    <div class="btn-group">
+      <button id="saveAffiliateTags" class="primary">Enregistrer les tags</button>
+      <button id="clearAffiliateTags" class="danger">Effacer les tags</button>
+    </div>
+    <div id="affiliateStatus" class="desc" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- 3. GitHub Quick-Share -->
+  <div class="card">
+    <h2>🐙 Partage Rapide GitHub (Bibliothèque)</h2>
+    <p class="desc">Publication atomique des DOM compactés et contextualisés dans <strong>Dracula06/amazon-4-colonnes · main</strong>.</p>
+    
+    <label for="token">Jeton GitHub personnel (Contents: Read & write)</label>
+    <input id="token" type="password" autocomplete="off" placeholder="ghp_... ou github_pat_...">
+    
+    <label class="check-label">
+      <input id="consent" type="checkbox">
+      <span>J’autorise chaque clic sur l’action GitHub à publier la copie filtrée de la page sur le dépôt, sans confirmation supplémentaire. Le filtre heuristique purge les sessions et adresses, mais ne doit pas être utilisé sur les pages de paiement ou de compte personnel.</span>
+    </label>
+
+    <div class="btn-group">
+      <button id="save" class="primary">Configurer GitHub</button>
+      <button id="forget" class="danger">Effacer le jeton</button>
+    </div>
+
+    <h3 style="font-size:13px;margin-top:16px;">État de la synchronisation</h3>
+    <pre id="status"></pre>
+  </div>
+
+  <script type="module" src="src/quick-share/settings.js"></script>
+</body>
+</html>

@@ -1,12 +1,44 @@
 {
- "manifest_version":3,
- "name":"Amazon — disposition et badges",
- "version":"0.7.1",
- "description":"Correction du parcours DOM des captures avec nettoyage imbriqué.",
- "permissions":["storage","activeTab","scripting"],
- "optional_host_permissions":["https://api.github.com/*"],
- "action":{"default_title":"Partager cette page Amazon sur GitHub"},
- "background":{"service_worker":"src/quick-share/background.js","type":"module"},
- "options_ui":{"page":"settings.html","open_in_tab":true},
- "content_scripts":[{"matches":["https://www.amazon.fr/*"],"js":["core.js","amazon.js"],"run_at":"document_idle"}]
+ "manifest_version": 3,
+ "name": "Amazon — disposition, filtres et badges",
+ "version": "0.8.0",
+ "description": "Disposition personnalisée 4 colonnes, masquage des pubs/recommandations, badges vendeurs multilingues et exports Discord/GitHub.",
+ "permissions": ["storage", "activeTab", "scripting"],
+ "optional_host_permissions": [
+  "https://api.github.com/*",
+  "https://discord.com/api/webhooks/*",
+  "https://discordapp.com/api/webhooks/*"
+ ],
+ "action": {
+  "default_title": "Amazon 4 Colonnes & Outils",
+  "default_popup": "popup.html"
+ },
+ "background": {
+  "service_worker": "src/quick-share/background.js",
+  "type": "module"
+ },
+ "options_ui": {
+  "page": "settings.html",
+  "open_in_tab": true
+ },
+ "content_scripts": [
+  {
+   "matches": [
+    "https://www.amazon.fr/*",
+    "https://www.amazon.co.uk/*",
+    "https://www.amazon.de/*",
+    "https://www.amazon.es/*",
+    "https://www.amazon.it/*"
+   ],
+   "js": [
+    "core.js",
+    "src/display/reviews-visibility.js",
+    "src/display/shipping-lock.js",
+    "src/display/affiliate-link.js",
+    "src/display/quick-frame.js",
+    "amazon.js"
+   ],
+   "run_at": "document_idle"
+  }
+ ]
 }
