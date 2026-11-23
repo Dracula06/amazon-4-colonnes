@@ -17,5 +17,5 @@ export async function uploadCapture(report,token){
  const files=chunks.map(f=>({path:folder+'/'+f.name,content:f.content}));
  if(files.some(f=>bytes(f.content)>MAX_BYTES)||files.reduce((n,f)=>n+bytes(f.content),0)>8*1024*1024)throw Error('Budget de taille dépassé : aucun envoi');
  const sha=await publishFiles(token.trim(),files,'docs: capture contextualisée '+market.country+' '+id);const path=folder+'/'+chunks.at(-1).name;
- return {path,url:'https://github.com/Dracula06/amazon-4-colonnes/blob/'+sha+'/'+path,files:files.length};
+ return {path,url:'https://github.com/Dracula06/amazon-dom-captures/blob/'+sha+'/'+path,files:files.length};
 }

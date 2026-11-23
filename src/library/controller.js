@@ -18,7 +18,7 @@ $('upload').onclick=async()=>{
   const exact=$('preview').value;
   let report;try{report=JSON.parse(exact);}catch(e){status('JSON invalide');return;}
   if(!report.metadata||typeof report.html!=='string'||!report.sanitization){status('Structure de rapport invalide');return;}
-  if(!confirm('Publier cette copie dans Dracula06/amazon-4-colonnes, branche main ? Un nouveau fichier sera créé, sans écraser les captures existantes.'))return;
+  if(!confirm('Publier cette copie dans Dracula06/amazon-dom-captures, branche main ? Un nouveau fichier sera créé, sans écraser les captures existantes.'))return;
   try{const permission=await allowGitHub();if(!permission)throw Error('Permission GitHub refusée');$('upload').disabled=true;const result=await uploadCapture(report,$('token').value);status('Envoyé : '+result.path+'\n'+(result.url||'')+'\nAvant une prochaine capture, synchronisez votre dépôt local avec votre BAT.');$('reviewed').checked=false;}catch(e){status(e.message);$('upload').disabled=!$('reviewed').checked;}
 };
 status('Cette page reste ouverte pour conserver le brut et le jeton uniquement en mémoire. Fermez-la pour les effacer.');

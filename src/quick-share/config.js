@@ -23,7 +23,7 @@ export async function saveConfig(token) {
       token: token.trim(),
       consent: true,
       consentedAt: new Date().toISOString(),
-      destination: 'Dracula06/amazon-4-colonnes/main'
+      destination: 'Dracula06/amazon-dom-captures/main'
     }
   });
 }
@@ -99,4 +99,49 @@ export async function saveAffiliateTags(partialTags = {}) {
   }
   await chrome.storage.local.set({ [KEY_AFFILIATE_TAGS]: next });
   return next;
+}
+
+export async function exportAllConfig() {
+  const [github, discord, telegram, display, affiliateTags] = await Promise.all([
+    readConfig(),
+    readDiscordConfig(),
+    readTelegramConfig(),
+    readDisplaySettings(),
+    readAffiliateTags()
+  ]);
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    github,
+    discord,
+    telegram,
+    display,
+    affiliateTags
+  };
+}
+
+export async function importAllConfig(data) {
+  if (!data || typeof data !== 'object') {
+    throw new Error('Données de configuration invalides.');
+  }
+
+  if (data.github?.token) {
+    await saveConfig(data.github.token);
+  }
+  if (data.discord) {
+    await saveDiscordConfig(data.discord.webhookUrl || '');
+  }
+  if (data.telegram) {
+    await saveTelegramConfig({
+      botToken: data.telegram.botToken || '',
+      chatId: data.telegram.chatId || '',
+      webhookUrl: data.telegram.webhookUrl || ''
+    });
+  }
+  if (data.display && typeof data.display === 'object') {
+    await saveDisplaySettings(data.display);
+  }
+  if (data.affiliateTags && typeof data.affiliateTags === 'object') {
+    await saveAffiliateTags(data.affiliateTags);
+  }
 }
