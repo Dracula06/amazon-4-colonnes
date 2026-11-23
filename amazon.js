@@ -373,36 +373,58 @@ function activeDetails() {
 }
 
 const COUNTRY_FLAGS = {
-  'amazon.it': { flag: '🇮🇹', name: 'Italie' },
-  'amazon.de': { flag: '🇩🇪', name: 'Allemagne' },
-  'amazon.es': { flag: '🇪🇸', name: 'Espagne' },
-  'amazon.co.uk': { flag: '🇬🇧', name: 'Royaume-Uni' },
-  'amazon.fr': { flag: '🇫🇷', name: 'France' },
-  'amazon.com': { flag: '🇺🇸', name: 'États-Unis' },
-  'amazon.ca': { flag: '🇨🇦', name: 'Canada' },
-  'amazon.nl': { flag: '🇳🇱', name: 'Pays-Bas' },
-  'amazon.be': { flag: '🇧🇪', name: 'Belgique' }
+  'amazon.it': { flag: '🇮🇹', name: 'Italie', code: 'IT' },
+  'amazon.de': { flag: '🇩🇪', name: 'Allemagne', code: 'DE' },
+  'amazon.es': { flag: '🇪🇸', name: 'Espagne', code: 'ES' },
+  'amazon.co.uk': { flag: '🇬🇧', name: 'Royaume-Uni', code: 'UK' },
+  'amazon.fr': { flag: '🇫🇷', name: 'France', code: 'FR' },
+  'amazon.com': { flag: '🇺🇸', name: 'États-Unis', code: 'US' },
+  'amazon.ca': { flag: '🇨🇦', name: 'Canada', code: 'CA' },
+  'amazon.nl': { flag: '🇳🇱', name: 'Pays-Bas', code: 'NL' },
+  'amazon.be': { flag: '🇧🇪', name: 'Belgique', code: 'BE' },
+  'amazon.com.be': { flag: '🇧🇪', name: 'Belgique', code: 'BE' },
+  'amazon.se': { flag: '🇸🇪', name: 'Suède', code: 'SE' },
+  'amazon.pl': { flag: '🇵🇱', name: 'Pologne', code: 'PL' }
 };
 
 function extractOriginUrl(currentUrl) {
+  if (!currentUrl) return null;
   try {
     const u = new URL(currentUrl);
-    const raw = u.searchParams.get('ar_su') || u.searchParams.get('redirectUrl') || u.searchParams.get('orig_url');
+    const keys = ['ar_su', 'redirectUrl', 'redirect_url', 'orig_url', 'originalUrl', 'ar_url', 'destination'];
+    let raw = null;
+    for (const k of keys) {
+      const v = u.searchParams.get(k);
+      if (v) {
+        raw = v;
+        break;
+      }
+    }
     if (!raw) return null;
-    let decoded = raw;
-    try { decoded = decodeURIComponent(raw); } catch {}
+
+    let decoded = raw.trim();
+    try { decoded = decodeURIComponent(decoded); } catch {}
+
+    if (/^\/\//.test(decoded)) {
+      decoded = 'https:' + decoded;
+    } else if (!/^https?:\/\//i.test(decoded)) {
+      if (/^(www\.)?amazon\.[a-z.]+/i.test(decoded)) {
+        decoded = 'https://' + decoded;
+      }
+    }
+
     const origin = new URL(decoded);
     const host = origin.hostname.replace(/^www\./, '').toLowerCase();
-    if (!host.startsWith('amazon.')) return null;
+    const currentHost = u.hostname.replace(/^www\./, '').toLowerCase();
+
+    if (!host.includes('amazon.') || host === currentHost) return null;
 
     const cleanParams = new URLSearchParams(origin.searchParams);
-    cleanParams.delete('ar_su');
-    cleanParams.delete('ar_srct');
-    cleanParams.delete('ar_mt');
-
-    if (!cleanParams.has('creatorsDisableRedirect')) {
-      cleanParams.set('creatorsDisableRedirect', 'true');
+    for (const p of ['ar_su', 'ar_srct', 'ar_mt', 'redirectUrl', 'redirect_url', 'orig_url', 'originalUrl']) {
+      cleanParams.delete(p);
     }
+
+    cleanParams.set('creatorsDisableRedirect', 'true');
 
     for (const key of ['tag', 'linkCode', 'ascsubtag', 'th', 'psc', 'smid']) {
       if (!cleanParams.has(key) && u.searchParams.has(key)) {
@@ -410,19 +432,33 @@ function extractOriginUrl(currentUrl) {
       }
     }
 
+    const cleanPath = origin.pathname.replace(/\/+$/, '') || '/';
     const searchStr = cleanParams.toString();
-    const cleanPath = origin.pathname.replace(/\/+$/, '');
-    const cleanUrl = `${origin.protocol}//${origin.host}${cleanPath}${searchStr ? '?' + searchStr : ''}`;
-    const info = COUNTRY_FLAGS[host] || { flag: '🌐', name: host };
-    return { host, cleanUrl, flag: info.flag, name: info.name };
+    const cleanUrl = `${origin.origin}${cleanPath}${searchStr ? '?' + searchStr : ''}`;
+    const info = COUNTRY_FLAGS[host] || { flag: '🌐', name: host, code: host.toUpperCase() };
+    const asinMatch = (cleanPath + ' ' + u.pathname).match(/(?:dp|gp\/product|gp\/aw\/d|product)\/([A-Z0-9]{10})/i);
+
+    return {
+      host,
+      rawUrl: decoded,
+      cleanUrl,
+      flag: info.flag,
+      name: info.name,
+      countryName: info.name,
+      countryCode: info.code,
+      tag: cleanParams.get('tag') || null,
+      asin: asinMatch ? asinMatch[1] : null
+    };
   } catch {
     return null;
   }
 }
 
-let originBannerDismissed = false;
+let originBannerDismissedUrl = '';
+let isRedirectingOrigin = false;
+
 function renderOriginBanner() {
-  if (originBannerDismissed) return;
+  if (originBannerDismissedUrl === location.href) return;
   const origin = extractOriginUrl(location.href);
   const existing = document.getElementById('al-origin-banner');
   if (!origin) {
@@ -430,16 +466,21 @@ function renderOriginBanner() {
     return;
   }
 
+  let loopDetected = false;
+
   // Redirection automatique si activée par l'utilisateur
   if (settings.autoRedirectOrigin) {
+    if (isRedirectingOrigin) return;
+
     const loopKey = 'al_loop_' + (origin.asin || origin.host);
     const last = sessionStorage.getItem(loopKey);
     const now = Date.now();
 
     if (last && (now - parseInt(last, 10)) < 8000) {
-      // Éviter une boucle infinie de va-et-vient entre les deux boutiques
+      loopDetected = true;
     } else {
       sessionStorage.setItem(loopKey, String(now));
+      isRedirectingOrigin = true;
       try {
         const target = new URL(origin.cleanUrl);
         target.searchParams.set('creatorsDisableRedirect', 'true');
@@ -451,21 +492,25 @@ function renderOriginBanner() {
     }
   }
 
-  if (existing) return;
+  if (existing) {
+    if (existing.dataset.cleanUrl === origin.cleanUrl) return;
+    existing.remove();
+  }
 
   const banner = document.createElement('div');
   banner.id = 'al-origin-banner';
+  banner.dataset.cleanUrl = origin.cleanUrl;
 
   const header = document.createElement('div');
   header.className = 'al-header';
-  header.innerHTML = `<span>${origin.flag} Lien initial : Amazon ${origin.name}</span>`;
+  header.innerHTML = `<span>${loopDetected ? '⚠️ ' : ''}${origin.flag} Lien initial : Amazon ${origin.name}</span>`;
 
   const closeBtn = document.createElement('button');
   closeBtn.className = 'al-close';
   closeBtn.setAttribute('aria-label', 'Fermer');
   closeBtn.textContent = '✕';
   closeBtn.onclick = () => {
-    originBannerDismissed = true;
+    originBannerDismissedUrl = location.href;
     banner.remove();
   };
   header.append(closeBtn);
@@ -473,7 +518,9 @@ function renderOriginBanner() {
   const textDesc = document.createElement('div');
   textDesc.style.fontSize = '12px';
   textDesc.style.color = '#475569';
-  textDesc.textContent = 'Votre compte vous a redirigé vers ce site. Vous pouvez consulter la fiche d’origine :';
+  textDesc.textContent = loopDetected
+    ? 'Redirection automatique suspendue pour éviter une boucle infinie. Fiche d’origine :'
+    : 'Votre compte vous a redirigé vers ce site. Vous pouvez consulter la fiche d’origine :';
 
   const link = document.createElement('a');
   link.className = 'al-link';
@@ -487,10 +534,24 @@ function renderOriginBanner() {
   copyBtn.textContent = '📋 Copier le lien d’origine';
   copyBtn.onclick = async () => {
     try {
-      await navigator.clipboard.writeText(origin.cleanUrl);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(origin.cleanUrl);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = origin.cleanUrl;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
       copyBtn.textContent = '✅ Lien copié !';
       setTimeout(() => { copyBtn.textContent = '📋 Copier le lien d’origine'; }, 2000);
-    } catch {}
+    } catch {
+      prompt('Copiez ce lien :', origin.cleanUrl);
+    }
   };
 
   banner.append(header, textDesc, link, document.createElement('br'), copyBtn);
@@ -504,10 +565,18 @@ function getCurrentProductSummary() {
   const asin = A?.extractAsin?.(location.pathname)
     || location.pathname.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i)?.[1]
     || null;
+  const priceData = extractProductPrice(snapshot) || {};
+  const ean = window._lastDetectedKeepaEan || priceData.ean || extractProductEan(document) || null;
   return {
     title: text(titleEl),
     asin,
-    price: extractProductPrice(),
+    price: priceData.price || null,
+    condition: priceData.condition || null,
+    discountRate: priceData.discountRate || null,
+    referencePrice: priceData.referencePrice || null,
+    newPrice: priceData.newPrice || null,
+    formattedPrice: priceData.formattedPrice || priceData.price || null,
+    ean,
     currencySymbol: text(currencyEl) || '€',
     url: location.href
   };
@@ -529,6 +598,7 @@ function renderFloatingQuickFrame() {
     isProductPage,
     logistics: snapshot,
     shippingRestriction: shippingSnapshot,
+    originRedirect: extractOriginUrl(location.href),
     product,
     visible: settings.showQuickFrame !== false,
     position: settings.quickFramePos || null,
@@ -556,12 +626,19 @@ function renderFloatingQuickFrame() {
     }),
     onShareDiscord: isProductPage ? (affiliateUrl => new Promise(resolve => {
       try {
+        const fresh = getCurrentProductSummary();
         const data = {
-          asin: product.asin || 'Inconnu',
-          title: product.title || 'Produit sans titre',
-          price: product.price || null,
-          currencySymbol: product.currencySymbol || '€',
-          url: affiliateUrl || product.url,
+          asin: fresh.asin || product.asin || 'Inconnu',
+          title: fresh.title || product.title || 'Produit sans titre',
+          price: fresh.price || product.price || null,
+          condition: fresh.condition || product.condition || null,
+          discountRate: fresh.discountRate || product.discountRate || null,
+          referencePrice: fresh.referencePrice || product.referencePrice || null,
+          newPrice: fresh.newPrice || product.newPrice || null,
+          formattedPrice: fresh.formattedPrice || product.formattedPrice || null,
+          ean: fresh.ean || window._lastDetectedKeepaEan || product.ean || null,
+          currencySymbol: fresh.currencySymbol || product.currencySymbol || '€',
+          url: affiliateUrl || fresh.url || product.url,
           kind: snapshot.kind,
           code: snapshot.code,
           label: snapshot.label,
@@ -576,7 +653,51 @@ function renderFloatingQuickFrame() {
       } catch (err) {
         resolve({ ok: false, error: err?.message || 'Erreur Discord' });
       }
-    })) : null
+    })) : null,
+    onShareTelegram: isProductPage ? (affiliateUrl => new Promise(resolve => {
+      try {
+        const fresh = getCurrentProductSummary();
+        const data = {
+          asin: fresh.asin || product.asin || 'Inconnu',
+          title: fresh.title || product.title || 'Produit sans titre',
+          price: fresh.price || product.price || null,
+          condition: fresh.condition || product.condition || null,
+          discountRate: fresh.discountRate || product.discountRate || null,
+          referencePrice: fresh.referencePrice || product.referencePrice || null,
+          newPrice: fresh.newPrice || product.newPrice || null,
+          formattedPrice: fresh.formattedPrice || product.formattedPrice || null,
+          ean: fresh.ean || window._lastDetectedKeepaEan || product.ean || null,
+          currencySymbol: fresh.currencySymbol || product.currencySymbol || '€',
+          url: affiliateUrl || fresh.url || product.url,
+          kind: snapshot.kind,
+          code: snapshot.code,
+          label: snapshot.label,
+          seller: snapshot.seller,
+          ship: snapshot.ship,
+          shippingRestriction: shippingSnapshot?.blocked ? shippingSnapshot : null,
+          marketplace: country ? country.code : 'FR'
+        };
+        chrome.runtime.sendMessage({ action: 'sendTelegram', data }, res => {
+          resolve(res || { ok: false, error: 'Aucune réponse' });
+        });
+      } catch (err) {
+        resolve({ ok: false, error: err?.message || 'Erreur Telegram' });
+      }
+    })) : null,
+    onShareGitHub: () => new Promise(resolve => {
+      try {
+        chrome.runtime.sendMessage({ action: 'triggerQuickShare' }, res => {
+          resolve(res || { ok: false, error: 'Aucune réponse' });
+        });
+      } catch (err) {
+        resolve({ ok: false, error: err?.message || 'Erreur GitHub' });
+      }
+    }),
+    onOpenCollector: () => {
+      try {
+        chrome.runtime.sendMessage({ action: 'openCollector' });
+      } catch {}
+    }
   });
 }
 
@@ -789,71 +910,656 @@ try {
 } catch {}
 apply();
 
-function extractProductPrice() {
-  const el = document.querySelector('#usedBuySection .offer-price, #corePriceDisplay_desktop_feature_div .a-offscreen, #corePrice_feature_div .a-offscreen, .apexPriceToPay .a-offscreen, #price_inside_buybox, .priceToPay .a-offscreen');
-  if (el) {
-    const t = text(el);
-    if (t) return t.replace(/&nbsp;/g, ' ');
+function parsePriceNumber(str) {
+  if (typeof str === 'number') return Number.isFinite(str) ? str : null;
+  if (!str) return null;
+  const match = String(str).match(/[\d\s.,\u00a0\u202f]+/);
+  if (!match) return null;
+  let s = match[0].replace(/[\s\u00a0\u202f]/g, '');
+  if (s.includes(',') && s.includes('.')) {
+    if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
+      s = s.replace(/\./g, '').replace(',', '.');
+    } else {
+      s = s.replace(/,/g, '');
+    }
+  } else if (s.includes(',')) {
+    s = s.replace(',', '.');
   }
-  const whole = document.querySelector('.a-price-whole');
-  const fraction = document.querySelector('.a-price-fraction');
-  if (whole) {
-    const w = text(whole).replace(/[.,]/g, '').trim();
-    const f = fraction ? text(fraction).trim() : '00';
-    return `${w},${f}`;
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+function normalizeDiscountRate(raw) {
+  if (!raw) return null;
+  const s = String(raw).replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' ').trim();
+  const m = s.match(/-?\s*(\d+)\s*%/);
+  if (m) return `-${m[1]}%`;
+  const num = s.match(/\d+/);
+  if (num) return `-${num[0]}%`;
+  return null;
+}
+
+function computeDiscountRate(currentPrice, basePrice) {
+  const pCur = parsePriceNumber(currentPrice);
+  const pBase = parsePriceNumber(basePrice);
+  if (pCur && pBase && pBase > pCur) {
+    const pct = Math.round(((pBase - pCur) / pBase) * 100);
+    return `-${pct}%`;
   }
   return null;
 }
 
+function cleanEan(raw) {
+  if (!raw && raw !== 0) return null;
+  const s = String(raw).replace(/[\s\u00a0\u202f-]/g, '').trim();
+  const m = s.match(/\b(\d{8}|\d{12}|\d{13}|\d{14})\b/);
+  return m ? m[1] : null;
+}
+
+function buildBarcodeLookupUrl(ean) {
+  const valid = cleanEan(ean);
+  return valid ? `https://www.barcodelookup.com/${valid}` : null;
+}
+
+function extractProductEan(rootDoc = (typeof document !== 'undefined' ? document : null)) {
+  if (!rootDoc) return null;
+
+  const rows = rootDoc.querySelectorAll?.(
+    '#productDetails_techSpec_section_1 tr, #productDetails_techSpec_section_2 tr, #prodDetails tr, .prodDetTable tr, #technicalSpecifications_section_1 tr, .techD tr'
+  ) || [];
+
+  for (const tr of rows) {
+    const th = tr.querySelector?.('th, .prodDetSectionEntry, td:first-child');
+    const td = tr.querySelector?.('td, .prodDetAttrValue, td:last-child');
+    const label = th?.textContent || '';
+    if (/(?:EAN|GTIN|UPC|ISBN(?:-10|-13)?|Code[- ]barres?|Barcode)/i.test(label)) {
+      const val = cleanEan(td?.textContent);
+      if (val) return val;
+    }
+  }
+
+  const bullets = rootDoc.querySelectorAll?.(
+    '#detailBullets_feature_div li, [data-feature-name="detailBullets"] li, #detailBulletsWrapper_feature_div li'
+  ) || [];
+
+  for (const li of bullets) {
+    const text = li.textContent || '';
+    if (/(?:EAN|GTIN|UPC|ISBN(?:-10|-13)?|Code[- ]barres?|Barcode)/i.test(text)) {
+      const m = text.match(/(?:EAN|GTIN|UPC|ISBN(?:-10|-13)?|Code[- ]barres?|Barcode)\s*[:·-]?\s*([\d\s-]{8,20})/i);
+      if (m) {
+        const val = cleanEan(m[1]);
+        if (val) return val;
+      }
+    }
+  }
+
+  // 3. Éléments Keepa metadata (surimpression, widget ou extension Keepa dans le DOM)
+  const keepaCodes = rootDoc.querySelectorAll?.('.productMeta__code, [data-copy], .productMeta__i > span');
+  if (keepaCodes) {
+    for (const el of keepaCodes) {
+      const label = el.querySelector?.('.productMeta__label')?.textContent || el.textContent || '';
+      if (/(?:EAN|GTIN|UPC|ISBN|Barcode|Code[- ]barres?)/i.test(label)) {
+        const copyAttr = el.getAttribute?.('data-copy');
+        const valAttr = el.querySelector?.('.productMeta__value')?.textContent;
+        const val = cleanEan(copyAttr || valAttr || el.textContent);
+        if (val) return val;
+      }
+    }
+  }
+
+  // 4. Conteneur Keepa injecté (si Keepa extension active)
+  const keepaEl = rootDoc.querySelector?.('#keepaContainer, #keepaTable, .keepa-table, #keepaBox, #keepa');
+  if (keepaEl) {
+    const kText = keepaEl.textContent || '';
+    const km = kText.match(/(?:EAN|GTIN|UPC|ISBN|Barcode|Code-barres)\s*[:·-]?\s*([\d\s-]{8,20})/i);
+    if (km) {
+      const val = cleanEan(km[1]);
+      if (val) return val;
+    }
+  }
+
+  // 5. Balises Script (JSON-LD ou state data)
+  const scripts = rootDoc.querySelectorAll?.('script[type="application/ld+json"], script:not([src])') || [];
+  for (const s of scripts) {
+    const content = s.textContent || '';
+    if (content.length > 50000) continue;
+    if (/(?:gtin|ean|upc)/i.test(content)) {
+      const jm = content.match(/"(?:gtin13|gtin14|gtin8|gtin|ean|upc)"\s*:\s*"([\d\s-]{8,20})"/i)
+        || content.match(/(?:ean|gtin)\s*[:=]\s*["']([\d\s-]{8,20})["']/i);
+      if (jm) {
+        const val = cleanEan(jm[1]);
+        if (val) return val;
+      }
+    }
+  }
+
+  return null;
+}
+
+function cleanReferencePrice(raw, valueFallback) {
+  if (!raw && !valueFallback) return null;
+  let s = String(raw || '').replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+
+  if (/^conseill[eé]\s+\d/i.test(s)) {
+    return s.replace(/^conseill[eé]\s+/i, 'conseillé ').replace(/(\d)\s*([€$£¥])/g, '$1 $2');
+  }
+  if (/^r[eé]cent\s+\d/i.test(s)) {
+    return s.replace(/^r[eé]cent\s+/i, 'récent ').replace(/(\d)\s*([€$£¥])/g, '$1 $2');
+  }
+  if (/^le\s+plus\s+bas\s+r[eé]cent\s+\d/i.test(s)) {
+    return s.replace(/^le\s+plus\s+bas\s+r[eé]cent\s+/i, 'le plus bas récent ').replace(/(\d)\s*([€$£¥])/g, '$1 $2');
+  }
+
+  let priceMatch = s.match(/(\d[\d\s.,\u00a0\u202f]*\s*[€$£¥]|\b(?:EUR|GBP|USD)\s*[\d.,]+)/i);
+  let priceVal = priceMatch ? priceMatch[0].trim() : (valueFallback ? String(valueFallback).trim() : '');
+  priceVal = priceVal.replace(/(\d)\s*([€$£¥])/g, '$1 $2');
+
+  if (!priceVal && s) {
+    const num = s.match(/[\d.,]+/);
+    if (num) priceVal = num[0].replace('.', ',') + ' €';
+  }
+  if (!priceVal) return null;
+
+  let label = 'conseillé';
+  if (/conseill[eé]|recommand|rrp|uvp|pvpr|recommended/i.test(s)) {
+    label = 'conseillé';
+  } else if (/plus\s+bas|30\s+derniers|lowest|was|statt|anterior/i.test(s)) {
+    label = /plus\s+bas/i.test(s) ? 'le plus bas récent' : 'récent';
+  } else if (/r[eé]cent/i.test(s)) {
+    label = 'récent';
+  } else if (/neuf|new/i.test(s)) {
+    label = 'neuf';
+  } else {
+    const cleaned = s
+      .replace(priceVal, '')
+      .replace(/^(?:prix|prezzo|precio|price)\s*/i, '')
+      .replace(/[:·-]\s*$/, '')
+      .trim()
+      .toLowerCase();
+    if (cleaned) label = cleaned;
+  }
+
+  return `${label} ${priceVal}`.trim();
+}
+
+function cleanLogisticsLabel(label, ship) {
+  if (!label) return 'Expéditeur non identifié';
+  let s = String(label).trim();
+  s = s.replace(/\s*·\s*(?:exp[ée]di[ée]\s+par|shipped\s+by|dispatched\s+by|versand\s+durch|enviado\s+por|spedito\s+da)\s+.*$/i, '').trim();
+  return s || label;
+}
+
+function getDiscountDealInfo(discountRate) {
+  if (!discountRate && discountRate !== 0) return null;
+  const match = String(discountRate).match(/(\d+)/);
+  if (!match) return null;
+  const percentage = parseInt(match[1], 10);
+  if (percentage <= 0) return null;
+
+  const rateStr = `-${percentage}%`;
+
+  if (percentage >= 71) {
+    return {
+      percentage,
+      rateStr,
+      badge: '🔴',
+      flames: '🔥🔥🔥',
+      color: '#dc2626',
+      tier: 'high',
+      formattedText: `${rateStr} 🔥🔥🔥`,
+      formattedLineTelegram: `🔴 <b>Remise :</b> ${rateStr} 🔥🔥🔥`,
+      formattedLineDiscord: `🔴 **Remise :** ${rateStr} 🔥🔥🔥`
+    };
+  } else if (percentage >= 51) {
+    return {
+      percentage,
+      rateStr,
+      badge: '🟠',
+      flames: '🔥🔥',
+      color: '#ea580c',
+      tier: 'medium',
+      formattedText: `${rateStr} 🔥🔥`,
+      formattedLineTelegram: `🟠 <b>Remise :</b> ${rateStr} 🔥🔥`,
+      formattedLineDiscord: `🟠 **Remise :** ${rateStr} 🔥🔥`
+    };
+  } else {
+    return {
+      percentage,
+      rateStr,
+      badge: '🟢',
+      flames: '🔥',
+      color: '#16a34a',
+      tier: 'low',
+      formattedText: `${rateStr} 🔥`,
+      formattedLineTelegram: `🟢 <b>Remise :</b> ${rateStr} 🔥`,
+      formattedLineDiscord: `🟢 **Remise :** ${rateStr} 🔥`
+    };
+  }
+}
+
+function getReferencePriceInfo({ referencePrice, newPrice, currencySymbol = '€' } = {}) {
+  const sym = currencySymbol || '€';
+
+  if (newPrice) {
+    const cleanNew = String(newPrice).replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' ').trim().replace(/(\d)\s*([€$£¥])/g, '$1 $2');
+    const newWithSym = /[€$£¥]|\b(?:EUR|GBP|USD)\b/i.test(cleanNew) ? cleanNew : `${cleanNew} ${sym}`;
+    const value = `neuf ${newWithSym}`;
+    const label = 'Prix d’origine';
+    return {
+      label,
+      value,
+      emoji: '🎯',
+      formattedLineTelegram: `🎯 <b>${label} :</b> ${value}`,
+      formattedLineDiscord: `🎯 **${label} :** ${value}`
+    };
+  }
+
+  if (referencePrice) {
+    const cleaned = cleanReferencePrice(referencePrice);
+    if (!cleaned) return null;
+
+    let label = 'Prix conseillé';
+    let val = cleaned;
+
+    if (/^conseill[eé]\s+/i.test(cleaned)) {
+      label = 'Prix conseillé';
+      val = cleaned.replace(/^conseill[eé]\s+/i, '');
+    } else if (/^le\s+plus\s+bas\s+r[eé]cent\s+/i.test(cleaned)) {
+      label = 'Prix le plus bas récent';
+      val = cleaned.replace(/^le\s+plus\s+bas\s+r[eé]cent\s+/i, '');
+    } else if (/^r[eé]cent\s+/i.test(cleaned)) {
+      label = 'Prix récent';
+      val = cleaned.replace(/^r[eé]cent\s+/i, '');
+    } else if (/^neuf\s+/i.test(cleaned)) {
+      label = 'Prix d’origine';
+      val = `neuf ${cleaned.replace(/^neuf\s+/i, '')}`;
+    } else {
+      label = 'Prix de référence';
+    }
+
+    return {
+      label,
+      value: val,
+      emoji: '🎯',
+      formattedLineTelegram: `🎯 <b>${label} :</b> ${val}`,
+      formattedLineDiscord: `🎯 **${label} :** ${val}`
+    };
+  }
+
+  return null;
+}
+
+function formatEnrichedPrice({ price, condition, discountRate, referencePrice, newPrice, currencySymbol = '€' } = {}) {
+  if (!price) return null;
+  const rawPrice = String(price).trim();
+  const hasSymbol = /[€$£¥]|\b(?:EUR|GBP|USD)\b/i.test(rawPrice);
+  const sym = currencySymbol || '€';
+  let baseFormatted = hasSymbol ? rawPrice : `${rawPrice} ${sym}`.trim();
+  baseFormatted = baseFormatted.replace(/(\d)\s*([€$£¥])/g, '$1 $2');
+
+  let existingParens = null;
+  const pMatch = baseFormatted.match(/\s*\(([^)]+)\)$/);
+  if (pMatch) {
+    existingParens = pMatch[1];
+    baseFormatted = baseFormatted.replace(/\s*\([^)]+\)$/, '').trim();
+  }
+
+  const parts = [];
+  const cond = condition || (existingParens && /occasion|reconditionn|used|seconde/i.test(existingParens) ? existingParens : null);
+
+  if (newPrice) {
+    if (cond) parts.push(cond);
+    let rate = normalizeDiscountRate(discountRate);
+    if (!rate) {
+      rate = computeDiscountRate(baseFormatted, newPrice);
+    }
+    const cleanNew = String(newPrice).replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' ').trim().replace(/(\d)\s*([€$£¥])/g, '$1 $2');
+    const newWithSym = /[€$£¥]|\b(?:EUR|GBP|USD)\b/i.test(cleanNew) ? cleanNew : `${cleanNew} ${sym}`;
+    if (rate) {
+      parts.push(`${rate} vs neuf ${newWithSym}`);
+    } else {
+      parts.push(`vs neuf ${newWithSym}`);
+    }
+  } else {
+    if (cond) parts.push(cond);
+    const rate = normalizeDiscountRate(discountRate);
+    if (rate) parts.push(rate);
+    const ref = cleanReferencePrice(referencePrice);
+    if (ref) parts.push(ref);
+  }
+
+  if (parts.length === 0 && existingParens) {
+    parts.push(existingParens);
+  }
+
+  if (parts.length > 0) {
+    return `${baseFormatted} (${parts.join(' · ')})`;
+  }
+  return baseFormatted;
+}
+
+const CONDITION_REGEX = /(?:(?:d['’]\s*occasion|occasion|segunda\s+mano|usato|gebraucht|used|reconditionn[eé]|reacondicionado|ricondizionato|renewed)\s*[-–:·]?\s*(?:comme\s+neuf|tr[eè]s\s+bon\s+[eé]tat|bon\s+[eé]tat|acceptable|like\s+new|very\s+good|good|wie\s+neu|sehr\s+gut|gut|akzeptabel|como\s+nuevo|muy\s+bueno|bueno|ottime\s+condizioni|buone\s+condizioni)?|(?:comme\s+neuf|tr[eè]s\s+bon\s+[eé]tat|bon\s+[eé]tat|like\s+new|very\s+good|wie\s+neu|sehr\s+gut|como\s+nuevo|muy\s+bueno|ottime\s+condizioni))/i;
+
+function normalizeCondition(raw) {
+  if (!raw) return null;
+  let s = String(raw).trim();
+  s = s.replace(/^(?:[ée]tat|condition|zustand|estado)\s*:\s*/i, '');
+  s = s.replace(/\s*[-–:·]\s*/g, ' - ');
+  s = s.replace(/^d['’]\s*occasion/i, 'Occasion');
+  if (/^occasion\s*-\s*comme\s+neuf/i.test(s)) return 'Occasion - Comme neuf';
+  if (/^occasion\s*-\s*tr[eè]s\s+bon\s+[eé]tat/i.test(s)) return 'Occasion - Très bon état';
+  if (/^occasion\s*-\s*bon\s+[eé]tat/i.test(s)) return 'Occasion - Bon état';
+  if (/^occasion\s*-\s*acceptable/i.test(s)) return 'Occasion - Acceptable';
+  if (/^reconditionn[eé]\s*-\s*comme\s+neuf/i.test(s)) return 'Reconditionné - Comme neuf';
+  if (/^reconditionn[eé]\s*-\s*tr[eè]s\s+bon\s+[eé]tat/i.test(s)) return 'Reconditionné - Très bon état';
+  if (/^reconditionn[eé]\s*-\s*bon\s+[eé]tat/i.test(s)) return 'Reconditionné - Bon état';
+  if (/^reconditionn[eé]\b/i.test(s)) return 'Reconditionné';
+  if (/^comme\s+neuf/i.test(s)) return 'Occasion - Comme neuf';
+  if (/^tr[eè]s\s+bon\s+[eé]tat/i.test(s)) return 'Occasion - Très bon état';
+  if (/^bon\s+[eé]tat/i.test(s)) return 'Occasion - Bon état';
+  if (/^acceptable/i.test(s)) return 'Occasion - Acceptable';
+  return s;
+}
+
+function findConditionIn(root) {
+  if (!root) return null;
+  const candidates = root.querySelectorAll(
+    '[data-hook="item-condition-badge"], #usedAccordionCaption_feature_div, [id*="AccordionCaption" i], ' +
+    '#caption_feature_div, .accordion-caption, [id*="caption" i], #usedCondition, [id*="condition" i], [class*="condition" i], ' +
+    '.a-text-bold, strong, b, h5, h4, h3, .accordion-row-title, .a-accordion-row-title, .a-expander-header'
+  );
+  for (const el of candidates) {
+    const t = text(el);
+    if (t) {
+      const m = t.match(CONDITION_REGEX);
+      if (m) return normalizeCondition(m[0]);
+    }
+  }
+  return null;
+}
+
+function extractProductPrice(sellerSnapshot, rootDoc = (typeof document !== 'undefined' ? document : null)) {
+  if (!rootDoc) return null;
+  let foundPrice = null;
+  let condition = null;
+  let discountRate = null;
+  let referencePrice = null;
+  let newPrice = null;
+
+  // 1. Chercher d'abord dans l'offre active du Buybox (accordéon moderne, radio ou swatch sélectionné)
+  const activeRadio = rootDoc.querySelector(
+    '#desktop_buybox input[type="radio"]:checked, #buybox input[type="radio"]:checked, ' +
+    '#desktop_buybox [role="radio"][aria-checked="true"], #buybox [role="radio"][aria-checked="true"], ' +
+    '#desktop_buybox button[aria-checked="true"], #buybox button[aria-checked="true"], ' +
+    '#desktop_buybox .a-button-selected button, #buybox .a-button-selected button'
+  );
+
+  const activeAccordionHeader = rootDoc.querySelector(
+    '#desktop_buybox .a-accordion-row[aria-expanded="true"], #desktop_buybox .accordion-header[aria-expanded="true"], ' +
+    '#desktop_buybox [data-action="a-accordion"][aria-expanded="true"], ' +
+    '#desktop_buybox .a-icon-radio-active, #buybox .a-icon-radio-active, ' +
+    '#desktop_buybox .accordion-row-active, #desktop_buybox .a-accordion-active, #desktop_buybox [class*="selected" i], ' +
+    '#buybox .accordion-row-active, #buybox .a-accordion-active'
+  );
+
+  const activeBox = (activeRadio?.closest?.(
+    'li, .a-box, .a-accordion-row, .accordion-row, [data-csa-c-slot-id], [id*="AccordionRow" i], [id*="buyBox" i], [id*="Buybox" i], [data-csa-c-buying-option-type], #usedBuySection, #usedOnlyBuybox'
+  )) || (activeAccordionHeader?.closest?.(
+    'li, .a-accordion-row-container, .a-box, .a-accordion-row, .accordion-row, [data-csa-c-slot-id], [id*="AccordionRow" i], [id*="buyBox" i], [id*="Buybox" i]'
+  )) || activeAccordionHeader;
+
+  if (activeBox) {
+    const pEl = activeBox.querySelector(
+      '.priceToPay .a-offscreen, .apexPriceToPay .a-offscreen, #price_inside_buybox, #usedPrice, .offer-price, .a-price .a-offscreen, .a-color-price, .apex-pricetopay-value .a-offscreen, [data-csa-c-price-to-pay]'
+    );
+    if (pEl) {
+      if (typeof pEl.getAttribute === 'function' && pEl.getAttribute('data-csa-c-price-to-pay')) {
+        const val = pEl.getAttribute('data-csa-c-price-to-pay');
+        if (val) foundPrice = val.replace('.', ',') + ' €';
+      }
+      if (!foundPrice) {
+        const t = text(pEl);
+        if (t) foundPrice = t.replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' ').trim();
+      }
+    }
+    condition = findConditionIn(activeBox);
+    if (!condition && activeBox.parentElement) {
+      condition = findConditionIn(activeBox.parentElement);
+    }
+  }
+
+  // 2. Si le vendeur détecté est Seconde main / Occasion / Reconditionné ou si UBB est actif
+  const isSecondHand = (sellerSnapshot?.seller && /seconde\s+main|warehouse|reconditionn|used|occasion|retourenkauf|segunda\s+mano|seconda\s+mano/i.test(sellerSnapshot.seller))
+    || Boolean(rootDoc.querySelector('#add-to-cart-button-ubb, #usedOnlyBuybox, #usedbuyBox, [data-csa-c-slot-id="usedAccordionRow"]'));
+
+  if (isSecondHand) {
+    if (!foundPrice) {
+      const usedEl = rootDoc.querySelector(
+        '#usedPrice, [data-csa-c-slot-id="usedAccordionRow"] .a-price .a-offscreen, #usedBuyBox .a-price .a-offscreen, #usedAccordionRow .a-price .a-offscreen, #usedBuySection .offer-price, [id*="used"] .a-price .a-offscreen, [id*="used"] .offer-price'
+      );
+      if (usedEl) {
+        const t = text(usedEl);
+        if (t) foundPrice = t.replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' ').trim();
+      }
+    }
+    if (!condition) {
+      const usedScope = rootDoc.querySelectorAll(
+        '#usedAccordionRow, [data-csa-c-slot-id="usedAccordionRow"], #usedAccordionCaption_feature_div, #used_buybox_desktop, #usedBuySection, #usedbuyBox, #usedOnlyBuybox, #aod-offer-heading, #olpLinkWidget_feature_div'
+      );
+      for (const scope of usedScope) {
+        condition = findConditionIn(scope);
+        if (condition) break;
+      }
+    }
+    if (!condition) {
+      condition = findConditionIn(rootDoc.querySelector('#desktop_buybox, #buybox'));
+    }
+    if (!condition) {
+      condition = /reconditionn|renewed/i.test(sellerSnapshot?.seller || '') ? 'Reconditionné' : 'Occasion';
+    }
+
+    // Cas 2 : Récupérer le prix de l'offre neuve
+    const newEl = rootDoc.querySelector(
+      '#newAccordionRow [data-csa-c-price-to-pay], [data-csa-c-slot-id*="newAccordionRow"] [data-csa-c-price-to-pay], ' +
+      '[data-csa-c-buying-option-type="NEW"][data-csa-c-price-to-pay], ' +
+      '#newAccordionRow .a-price .a-offscreen, [data-csa-c-slot-id*="newAccordionRow"] .a-price .a-offscreen, ' +
+      '#corePriceDisplay_desktop_feature_div [data-csa-c-buying-option-type="NEW"][data-csa-c-price-to-pay], ' +
+      '#corePrice_desktop [data-csa-c-buying-option-type="NEW"][data-csa-c-price-to-pay], ' +
+      '#corePriceDisplay_desktop_feature_div [data-csa-c-price-to-pay]'
+    );
+    if (newEl) {
+      if (typeof newEl.getAttribute === 'function' && newEl.getAttribute('data-csa-c-price-to-pay')) {
+        const val = newEl.getAttribute('data-csa-c-price-to-pay');
+        if (val) newPrice = val.replace('.', ',') + ' €';
+      }
+      if (!newPrice) {
+        const t = text(newEl);
+        if (t) newPrice = t.replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' ').trim();
+      }
+    }
+    if (!newPrice) {
+      const newOff = rootDoc.querySelector('#newAccordionRow .a-price .a-offscreen, [data-csa-c-slot-id*="newAccordionRow"] .a-price .a-offscreen');
+      if (newOff) {
+        const t = text(newOff);
+        if (t) newPrice = t.replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' ').trim();
+      }
+    }
+    if (foundPrice && newPrice) {
+      discountRate = computeDiscountRate(foundPrice, newPrice);
+    }
+  }
+
+  // 3. Repli sur le prix central à payer (priceToPay a priorité sur corePriceDisplay global)
+  if (!foundPrice) {
+    const el = rootDoc.querySelector(
+      '.priceToPay .a-offscreen, .apexPriceToPay .a-offscreen, #price_inside_buybox, #usedBuySection .offer-price, #corePriceDisplay_desktop_feature_div .priceToPay .a-offscreen, #corePrice_desktop .priceToPay .a-offscreen, #corePriceDisplay_desktop_feature_div .a-offscreen, #corePrice_feature_div .a-offscreen'
+    );
+    if (el) {
+      const t = text(el);
+      if (t) foundPrice = t.replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' ').trim();
+    }
+  }
+
+  // 4. Repli ultime sur entiers et fractions
+  if (!foundPrice) {
+    const whole = rootDoc.querySelector('.a-price-whole');
+    const fraction = rootDoc.querySelector('.a-price-fraction');
+    if (whole) {
+      const w = text(whole).replace(/[.,]/g, '').trim();
+      const f = fraction ? text(fraction).trim() : '00';
+      foundPrice = `${w},${f}`;
+    }
+  }
+
+  if (!foundPrice) return null;
+
+  // Normaliser l'espacement du symbole monétaire (ex: "16,36€" -> "16,36 €")
+  foundPrice = foundPrice.replace(/(\d)\s*([€$£¥])/g, '$1 $2');
+  if (newPrice) newPrice = newPrice.replace(/(\d)\s*([€$£¥])/g, '$1 $2');
+
+  // Cas 1 : Si ce n'est pas une offre d'occasion, extraire la réduction officielle et le prix de référence
+  if (!isSecondHand) {
+    const saveEl = rootDoc.querySelector('.savingsPercentage, .reinventPriceSavingsPercentageMargin');
+    if (saveEl) {
+      discountRate = normalizeDiscountRate(text(saveEl));
+    }
+    if (!discountRate) {
+      const saveAttr = rootDoc.querySelector('[data-csa-c-savings-percentage]');
+      if (saveAttr && typeof saveAttr.getAttribute === 'function') {
+        discountRate = normalizeDiscountRate(saveAttr.getAttribute('data-csa-c-savings-percentage'));
+      }
+    }
+
+    const basisOff = rootDoc.querySelector('.apex-basisprice-offscreen-label');
+    if (basisOff) {
+      referencePrice = cleanReferencePrice(text(basisOff));
+    } else {
+      const basisVal = rootDoc.querySelector('.apex-basisprice-value .a-offscreen, .apex-basisprice-value, .basisPrice .a-offscreen');
+      const basisLbl = rootDoc.querySelector('.apex-basisprice-label, .basisPrice');
+      if (basisVal) {
+        referencePrice = cleanReferencePrice(basisLbl ? text(basisLbl) : null, text(basisVal));
+      }
+    }
+    if (!referencePrice) {
+      const strikeEl = rootDoc.querySelector('[data-csa-c-strike-through-price]');
+      if (strikeEl && typeof strikeEl.getAttribute === 'function') {
+        const sVal = strikeEl.getAttribute('data-csa-c-strike-through-price');
+        if (sVal) referencePrice = cleanReferencePrice(sVal.replace('.', ',') + ' €');
+      }
+    }
+  }
+
+  const formattedPrice = formatEnrichedPrice({
+    price: foundPrice,
+    condition,
+    discountRate,
+    referencePrice,
+    newPrice
+  });
+
+  const ean = extractProductEan(rootDoc);
+
+  return {
+    price: foundPrice,
+    condition: condition || null,
+    discountRate: discountRate || null,
+    referencePrice: referencePrice || null,
+    newPrice: newPrice || null,
+    formattedPrice,
+    ean: ean || null,
+    toString() {
+      return this.formattedPrice || this.price || '';
+    }
+  };
+}
+
+globalThis.ALPricing = {
+  parsePriceNumber,
+  normalizeDiscountRate,
+  cleanReferencePrice,
+  computeDiscountRate,
+  formatEnrichedPrice,
+  cleanLogisticsLabel,
+  getDiscountDealInfo,
+  getReferencePriceInfo,
+  cleanEan,
+  buildBarcodeLookupUrl,
+  extractProductEan,
+  extractProductPrice
+};
+
 // Écoute des mises à jour émises depuis la popup ou les options
 chrome.runtime.onMessage.addListener((m, s, r) => {
-  if (m.action === 'displaySettingsChanged') {
-    const prevHideReviews = !!settings.hideReviews;
-    settings = { ...settings, ...m.settings };
-    if (!!settings.hideReviews !== prevHideReviews) {
-      reviewsRevealed = false;
+  try {
+    if (m.action === 'displaySettingsChanged') {
+      const prevHideReviews = !!settings.hideReviews;
+      settings = { ...settings, ...m.settings };
+      if (!!settings.hideReviews !== prevHideReviews) {
+        reviewsRevealed = false;
+      }
+      apply();
+      r({ ok: true });
+      return;
     }
-    apply();
-  }
-  if (m.action === 'affiliateTagsChanged') {
-    affiliateTags = { ...affiliateTags, ...(m.tags || {}) };
-    apply();
-  }
-  if (m.action === 'triggerSiteStripeShortLink') {
-    if (!QF) {
-      r({ ok: false, error: 'Module SiteStripe indisponible' });
-      return false;
+    if (m.action === 'affiliateTagsChanged') {
+      affiliateTags = { ...affiliateTags, ...(m.tags || {}) };
+      apply();
+      r({ ok: true });
+      return;
     }
-    QF.triggerSiteStripeShortLink(document).then(r).catch(err => r({ ok: false, message: err.message }));
-    return true;
-  }
-  if (m.action === 'status') {
-    const product = getCurrentProductSummary();
-    const country = A?.resolveDefinedCountry?.(location.hostname) || null;
-    siteStripeSnapshot = A ? A.extractSiteStripeInfo(document) : { present: false };
-    const savedTag = country ? (affiliateTags[country.code] || '') : '';
-    const activeTag = siteStripeSnapshot.trackingId || savedTag || '';
-    const quickLink = A
-      ? A.buildQuickAffiliateLink(location.href, { trackingId: activeTag, asin: product.asin || '' })
-      : null;
+    if (m.action === 'triggerSiteStripeShortLink') {
+      if (!QF) {
+        r({ ok: false, error: 'Module SiteStripe indisponible' });
+        return false;
+      }
+      QF.triggerSiteStripeShortLink(document).then(r).catch(err => r({ ok: false, message: err.message }));
+      return true;
+    }
+    if (m.action === 'status') {
+      const product = getCurrentProductSummary();
+      const country = A?.resolveDefinedCountry?.(location.hostname) || null;
+      siteStripeSnapshot = A ? A.extractSiteStripeInfo(document) : { present: false };
+      const savedTag = country ? (affiliateTags[country.code] || '') : '';
+      const activeTag = siteStripeSnapshot.trackingId || savedTag || '';
+      const quickLink = A
+        ? A.buildQuickAffiliateLink(location.href, { trackingId: activeTag, asin: product?.asin || '' })
+        : null;
 
-    r({
-      version: '0.8.0',
-      state,
-      width: innerWidth,
-      settings,
-      logistics: snapshot,
-      shippingRestriction: shippingSnapshot,
-      siteStripe: siteStripeSnapshot,
-      affiliate: {
-        country,
-        savedTag,
-        activeTag,
-        quickUrl: quickLink?.url || ''
-      },
-      product,
-      originRedirect: extractOriginUrl(location.href)
-    });
+      r({
+        version: '0.9.0',
+        state,
+        width: innerWidth,
+        settings,
+        logistics: snapshot,
+        shippingRestriction: shippingSnapshot,
+        siteStripe: siteStripeSnapshot,
+        affiliate: {
+          country,
+          savedTag,
+          activeTag,
+          quickUrl: quickLink?.url || ''
+        },
+        product,
+        originRedirect: extractOriginUrl(location.href)
+      });
+      return;
+    }
+  } catch (err) {
+    console.error('Erreur onMessage amazon.js :', err);
+    try { r({ ok: false, error: err?.message || 'Erreur interne content script' }); } catch {}
+  }
+});
+
+// Écoute de l'EAN détecté depuis l'iframe Keepa (surimpression ou widget)
+window.addEventListener('message', event => {
+  if (event?.data && event.data.type === 'KEEPA_DETECTED_EAN' && event.data.ean) {
+    const detected = cleanEan(event.data.ean);
+    if (detected && detected !== window._lastDetectedKeepaEan) {
+      window._lastDetectedKeepaEan = detected;
+      if (typeof renderFloatingQuickFrame === 'function') {
+        renderFloatingQuickFrame();
+      }
+    }
   }
 });
 

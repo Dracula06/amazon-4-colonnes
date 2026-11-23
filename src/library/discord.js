@@ -3,6 +3,16 @@
  * Permet de formater et d'expédier un embed enrichi présentant une fiche produit analysée.
  */
 
+import {
+  formatEnrichedPrice,
+  cleanLogisticsLabel,
+  getDiscountDealInfo,
+  getReferencePriceInfo,
+  computeDiscountRate
+} from './pricing.js';
+import { cleanEan, buildBarcodeLookupUrl } from './ean.js';
+import { buildDiscordCashbackField, buildDiscordExtensionsField } from './cashback.js';
+
 const DISCORD_WEBHOOK_PATTERN = /^https:\/\/(?:ptb\.|canary\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[A-Za-z0-9_-]+$/;
 
 const COLORS = Object.freeze({
@@ -22,6 +32,25 @@ export function isValidDiscordWebhook(url) {
   return typeof url === 'string' && DISCORD_WEBHOOK_PATTERN.test(url.trim());
 }
 
+export function cleanAffiliateUrl(rawUrl) {
+  if (!rawUrl) return '';
+  try {
+    const u = new URL(rawUrl);
+    const keepKeys = new Set(['tag', 'smid', 'm']);
+    const newParams = new URLSearchParams();
+    for (const [k, v] of u.searchParams.entries()) {
+      if (keepKeys.has(k.toLowerCase())) {
+        newParams.set(k.toLowerCase(), v);
+      }
+    }
+    const cleanPath = u.pathname.replace(/\/ref=[^/?#]*/i, '') || '/';
+    const qs = newParams.toString();
+    return `${u.origin}${cleanPath}${qs ? '?' + qs : ''}`;
+  } catch {
+    return rawUrl;
+  }
+}
+
 /**
  * Construit le payload d'un Embed Discord pour une fiche produit Amazon.
  * @param {object} info
@@ -32,7 +61,8 @@ export function buildDiscordEmbed(info = {}) {
   const marketplace = info.marketplace || 'FR';
   const rawTitle = info.title ? String(info.title).trim() : 'Produit Amazon';
   const title = rawTitle.length > 240 ? rawTitle.slice(0, 237) + '...' : rawTitle;
-  const url = info.url || `https://www.amazon.fr/dp/${asin}`;
+  const rawUrl = info.url || `https://www.amazon.fr/dp/${asin}`;
+  const url = cleanAffiliateUrl(rawUrl);
   const kind = info.kind || 'unknown';
   const shippingRestriction = info.shippingRestriction && info.shippingRestriction.blocked
     ? info.shippingRestriction
@@ -40,23 +70,107 @@ export function buildDiscordEmbed(info = {}) {
   const color = shippingRestriction ? COLORS.blocked : (COLORS[kind] || COLORS.unknown);
 
   const code = info.code || 'À VÉRIFIER';
-  const label = info.label || 'Expéditeur non identifié';
-  const price = info.price ? `${info.price} ${info.currencySymbol || '€'}` : 'Non détecté';
+  const rawLabel = info.label || 'Expéditeur non identifié';
+  const cleanLabel = cleanLogisticsLabel(rawLabel, info.ship);
+
+  let baseFormatted = null;
+  let cond = info.condition || null;
+  let rawPrice = info.price ? String(info.price).trim() : '';
+  let discountRate = info.discountRate || null;
+  let newPrice = info.newPrice || null;
+  let referencePrice = info.referencePrice || null;
+  const sym = info.currencySymbol || '€';
+
+  if (rawPrice) {
+    const hasSymbol = /[€$£¥]|\b(?:EUR|GBP|USD)\b/i.test(rawPrice);
+    baseFormatted = hasSymbol ? rawPrice : `${rawPrice} ${sym}`.trim();
+    baseFormatted = baseFormatted.replace(/(\d)\s*([€$£¥])/g, '$1 $2');
+
+    let existingParens = null;
+    const pMatch = baseFormatted.match(/\s*\(([^)]+)\)$/);
+    if (pMatch) {
+      existingParens = pMatch[1].trim();
+      baseFormatted = baseFormatted.replace(/\s*\([^)]+\)$/, '').trim();
+    }
+
+    if (existingParens) {
+      if (existingParens.includes('·')) {
+        const parts = existingParens.split('·').map(s => s.trim());
+        for (const pt of parts) {
+          if (!cond && /occasion|reconditionn|used|seconde/i.test(pt)) {
+            cond = pt;
+          } else if (!discountRate && /-?\d+\s*%/.test(pt)) {
+            discountRate = pt;
+          } else if (!newPrice && /vs\s+neuf\s+([\d.,\s]+[€$£¥]?)/i.test(pt)) {
+            const m = pt.match(/vs\s+neuf\s+([\d.,\s]+[€$£¥]?)/i);
+            if (m) newPrice = m[1].trim();
+          } else if (!referencePrice && /conseill[eé]|r[eé]cent|plus\s+bas/i.test(pt)) {
+            referencePrice = pt;
+          }
+        }
+      } else {
+        if (!cond && /occasion|reconditionn|used|seconde/i.test(existingParens)) {
+          cond = existingParens;
+        } else if (!cond) {
+          cond = existingParens;
+        }
+      }
+    }
+  }
+
+  if (!discountRate && baseFormatted && newPrice) {
+    discountRate = computeDiscountRate(baseFormatted, newPrice);
+  }
+
+  const dealInfo = getDiscountDealInfo(discountRate);
+  const refInfo = getReferencePriceInfo({ referencePrice, newPrice, currencySymbol: sym });
+
+  let displayPrice = baseFormatted ? (cond ? `${baseFormatted} (${cond})` : baseFormatted) : (info.price || 'Non détecté');
 
   const fields = [
     {
       name: '🏷️ ASIN & Pays',
       value: `\`${asin}\` (${marketplace})`,
       inline: true
-    },
-    {
-      name: '💰 Prix repéré',
-      value: price,
+    }
+  ];
+
+  const validEan = cleanEan(info.ean);
+  if (validEan) {
+    const lookupUrl = buildBarcodeLookupUrl(validEan);
+    fields.push({
+      name: '🔍 EAN & Code-barres',
+      value: `[\`${validEan}\`](${lookupUrl})`,
       inline: true
-    },
+    });
+  }
+
+  fields.push({
+    name: '💰 Prix repéré',
+    value: displayPrice,
+    inline: true
+  });
+
+  if (refInfo) {
+    fields.push({
+      name: `${refInfo.emoji} ${refInfo.label}`,
+      value: refInfo.value,
+      inline: true
+    });
+  }
+
+  if (dealInfo) {
+    fields.push({
+      name: `${dealInfo.badge} Remise`,
+      value: `${dealInfo.rateStr} ${dealInfo.flames}`,
+      inline: true
+    });
+  }
+
+  fields.push(
     {
       name: '🚚 Logistique',
-      value: `**[${code}]** ${label}`,
+      value: `**[${code}]** ${cleanLabel}`,
       inline: false
     },
     {
@@ -69,7 +183,17 @@ export function buildDiscordEmbed(info = {}) {
       value: info.ship ? `\`${info.ship}\`` : 'Non identifié',
       inline: true
     }
-  ];
+  );
+
+  const cashbackField = buildDiscordCashbackField(info.cashbackConfig);
+  if (cashbackField) {
+    fields.push(cashbackField);
+  }
+
+  const extensionsField = buildDiscordExtensionsField(info.extensionsConfig);
+  if (extensionsField) {
+    fields.push(extensionsField);
+  }
 
   if (shippingRestriction) {
     const lockTitle = shippingRestriction.title || 'LOCK pays';
@@ -100,7 +224,7 @@ export function buildDiscordEmbed(info = {}) {
         color,
         fields,
         footer: {
-          text: `Amazon Inspector • Extension 4 Colonnes • ${new Date().toISOString().slice(0, 10)}`
+          text: `${new Date().toISOString().slice(0, 10)}`
         }
       }
     ]

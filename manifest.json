@@ -1,17 +1,43 @@
 {
  "manifest_version": 3,
  "name": "Amazon — disposition, filtres et badges",
- "version": "0.8.0",
+ "version": "1.0.0",
  "description": "Disposition personnalisée 4 colonnes, masquage des pubs/recommandations, badges vendeurs multilingues et exports Discord/GitHub.",
- "permissions": ["storage", "activeTab", "scripting"],
+ "permissions": ["storage", "activeTab", "scripting", "declarativeNetRequest"],
+ "host_permissions": [
+  "https://*.keepa.com/*",
+  "https://keepa.com/*"
+ ],
+ "declarative_net_request": {
+  "rule_resources": [
+    {
+      "id": "ruleset_1",
+      "enabled": true,
+      "path": "rules.json"
+    }
+  ]
+ },
+ "icons": {
+  "16": "icons/icon16.png",
+  "32": "icons/icon32.png",
+  "48": "icons/icon48.png",
+  "128": "icons/icon128.png"
+ },
  "optional_host_permissions": [
   "https://api.github.com/*",
   "https://discord.com/api/webhooks/*",
-  "https://discordapp.com/api/webhooks/*"
+  "https://discordapp.com/api/webhooks/*",
+  "https://api.telegram.org/*"
  ],
  "action": {
   "default_title": "Amazon 4 Colonnes & Outils",
-  "default_popup": "popup.html"
+  "default_popup": "popup.html",
+  "default_icon": {
+   "16": "icons/icon16.png",
+   "32": "icons/icon32.png",
+   "48": "icons/icon48.png",
+   "128": "icons/icon128.png"
+  }
  },
  "background": {
   "service_worker": "src/quick-share/background.js",
@@ -39,6 +65,17 @@
     "amazon.js"
    ],
    "run_at": "document_idle"
+  },
+  {
+   "matches": [
+    "https://keepa.com/*",
+    "https://*.keepa.com/*"
+   ],
+   "all_frames": true,
+   "js": [
+    "src/display/keepa-frame.js"
+   ],
+   "run_at": "document_start"
   }
  ]
 }

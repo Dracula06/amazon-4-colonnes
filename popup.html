@@ -47,6 +47,8 @@
     button:hover { background: #f1f5f9; border-color: #94a3b8; }
     button.btn-primary { background: #5865f2; color: #ffffff; border-color: #4752c4; }
     button.btn-primary:hover { background: #4752c4; }
+    button.btn-telegram { background: #229ED9; color: #ffffff; border-color: #1c8ec4; }
+    button.btn-telegram:hover { background: #1c8ec4; }
     button.btn-dark { background: #24292f; color: #ffffff; border-color: #1b1f24; }
     button.btn-dark:hover { background: #1b1f24; }
     .full-width { grid-column: span 2; }
@@ -60,8 +62,8 @@
 </head>
 <body>
   <h2>
-    <span>Amazon 4 Colonnes</span>
-    <span class="badge-ver">v0.8.0</span>
+    <span><img src="icons/icon32.png" alt="" style="width:18px;height:18px;border-radius:4px;vertical-align:middle;margin-right:6px;">Amazon 4 Colonnes</span>
+    <span class="badge-ver">v1.0.0</span>
   </h2>
 
   <!-- 1. Interrupteurs d'affichage -->
@@ -97,7 +99,8 @@
     <div class="section-title">Partage & Actions</div>
     <div class="btn-row">
       <button id="btnDiscord" class="btn-primary" title="Notifier ce produit sur Discord">📢 Discord</button>
-      <button id="btnGitHub" class="btn-dark" title="Sauvegarder la capture sur GitHub">🐙 GitHub</button>
+      <button id="btnTelegram" class="btn-telegram" title="Notifier ce produit sur Telegram">✈️ Telegram</button>
+      <button id="btnGitHub" class="btn-dark full-width" title="Sauvegarder la capture sur GitHub">🐙 GitHub</button>
       <button id="btnCollector" class="full-width" title="Ouvrir la bibliothèque et le collecteur avancé">📚 Collecteur complet</button>
     </div>
     <div id="actionStatus"></div>

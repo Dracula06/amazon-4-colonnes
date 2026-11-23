@@ -14,6 +14,7 @@ const COUNTRY_FLAGS = Object.freeze({
   'amazon.ca': { flag: '🇨🇦', name: 'Canada', code: 'CA' },
   'amazon.nl': { flag: '🇳🇱', name: 'Pays-Bas', code: 'NL' },
   'amazon.be': { flag: '🇧🇪', name: 'Belgique', code: 'BE' },
+  'amazon.com.be': { flag: '🇧🇪', name: 'Belgique', code: 'BE' },
   'amazon.se': { flag: '🇸🇪', name: 'Suède', code: 'SE' },
   'amazon.pl': { flag: '🇵🇱', name: 'Pologne', code: 'PL' }
 });
@@ -27,32 +28,47 @@ export function extractOriginUrl(currentUrl) {
   if (!currentUrl) return null;
   try {
     const u = new URL(currentUrl);
-    const rawOrigin = u.searchParams.get('ar_su') || u.searchParams.get('redirectUrl') || u.searchParams.get('orig_url');
+    const keys = ['ar_su', 'redirectUrl', 'redirect_url', 'orig_url', 'originalUrl', 'ar_url', 'destination'];
+    let rawOrigin = null;
+    for (const k of keys) {
+      const v = u.searchParams.get(k);
+      if (v) {
+        rawOrigin = v;
+        break;
+      }
+    }
     if (!rawOrigin) return null;
 
-    let decoded = rawOrigin;
+    let decoded = rawOrigin.trim();
     try {
-      decoded = decodeURIComponent(rawOrigin);
+      decoded = decodeURIComponent(decoded);
     } catch {}
+
+    if (/^\/\//.test(decoded)) {
+      decoded = 'https:' + decoded;
+    } else if (!/^https?:\/\//i.test(decoded)) {
+      if (/^(www\.)?amazon\.[a-z.]+/i.test(decoded)) {
+        decoded = 'https://' + decoded;
+      }
+    }
 
     const originUrl = new URL(decoded);
     const host = originUrl.hostname.replace(/^www\./, '').toLowerCase();
+    const currentHost = u.hostname.replace(/^www\./, '').toLowerCase();
 
-    // Vérifier qu'il s'agit bien d'un domaine Amazon valide
-    if (!host.startsWith('amazon.')) return null;
+    // Vérifier qu'il s'agit bien d'un domaine Amazon valide et différent du site actuel
+    if (!host.includes('amazon.') || host === currentHost) return null;
 
     // Conserver tous les paramètres du lien d'origine (notamment tag, linkCode, ascsubtag pour l'affiliation)
     const cleanParams = new URLSearchParams(originUrl.searchParams);
 
     // Supprimer les paramètres de routage interne de redirection Amazon
-    cleanParams.delete('ar_su');
-    cleanParams.delete('ar_srct');
-    cleanParams.delete('ar_mt');
+    for (const p of ['ar_su', 'ar_srct', 'ar_mt', 'redirectUrl', 'redirect_url', 'orig_url', 'originalUrl']) {
+      cleanParams.delete(p);
+    }
 
     // S'assurer de conserver ou d'ajouter creatorsDisableRedirect pour éviter la boucle de redirection
-    if (!cleanParams.has('creatorsDisableRedirect')) {
-      cleanParams.set('creatorsDisableRedirect', 'true');
-    }
+    cleanParams.set('creatorsDisableRedirect', 'true');
 
     // Récupérer les éventuels tags et variantes présents sur l'URL courante si absents
     for (const key of ['tag', 'linkCode', 'ascsubtag', 'th', 'psc', 'smid']) {
@@ -61,21 +77,23 @@ export function extractOriginUrl(currentUrl) {
       }
     }
 
+    const cleanPath = originUrl.pathname.replace(/\/+$/, '') || '/';
     const searchStr = cleanParams.toString();
-    const cleanPath = originUrl.pathname.replace(/\/+$/, '');
-    const cleanUrl = `${originUrl.protocol}//${originUrl.host}${cleanPath}${searchStr ? '?' + searchStr : ''}`;
+    const cleanUrl = `${originUrl.origin}${cleanPath}${searchStr ? '?' + searchStr : ''}`;
 
     const info = COUNTRY_FLAGS[host] || { flag: '🌐', name: host, code: host.toUpperCase() };
+    const asinMatch = (cleanPath + ' ' + u.pathname).match(/(?:dp|gp\/product|gp\/aw\/d|product)\/([A-Z0-9]{10})/i);
 
     return {
       host,
       rawUrl: decoded,
       cleanUrl,
       flag: info.flag,
+      name: info.name,
       countryName: info.name,
       countryCode: info.code,
       tag: cleanParams.get('tag') || null,
-      asin: cleanPath.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i)?.[1] || null
+      asin: asinMatch ? asinMatch[1] : null
     };
   } catch {
     return null;

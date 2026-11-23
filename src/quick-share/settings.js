@@ -1,11 +1,19 @@
 import {
   readConfig, saveConfig, clearConfig,
   readDiscordConfig, saveDiscordConfig, clearDiscordConfig,
+  readTelegramConfig, saveTelegramConfig, clearTelegramConfig,
   readDisplaySettings, saveDisplaySettings,
   readAffiliateTags, saveAffiliateTags
 } from './config.js';
 import { allowGitHub } from '../library/github.js';
 import { isValidDiscordWebhook, sendDiscordWebhook, buildDiscordEmbed } from '../library/discord.js';
+import {
+  allowTelegram,
+  isValidTelegramToken,
+  isValidTelegramChatId,
+  sendTelegramMessage,
+  buildTelegramMessage
+} from '../library/telegram.js';
 import { MARKETPLACES } from '../library/marketplaces.js';
 
 const $ = id => document.getElementById(id);
@@ -29,6 +37,21 @@ async function refreshAll() {
     $('discordWebhook').value = '';
     $('discordStatus').textContent = 'Aucun webhook Discord configuré.';
     $('discordStatus').style.color = '#64748b';
+  }
+
+  // 2b. Telegram
+  const tCfg = await readTelegramConfig();
+  if ($('telegramToken')) $('telegramToken').value = tCfg?.botToken || '';
+  if ($('telegramChatId')) $('telegramChatId').value = tCfg?.chatId || '';
+  if ($('telegramWebhook')) $('telegramWebhook').value = tCfg?.webhookUrl || '';
+  if ($('telegramStatus')) {
+    if ((tCfg?.botToken && tCfg?.chatId) || tCfg?.webhookUrl) {
+      $('telegramStatus').textContent = '✅ Intégration Telegram configurée et active.';
+      $('telegramStatus').style.color = '#16a34a';
+    } else {
+      $('telegramStatus').textContent = 'Aucun bot ou webhook Telegram configuré.';
+      $('telegramStatus').style.color = '#64748b';
+    }
   }
 
   // 3. Display
@@ -113,6 +136,97 @@ $('clearDiscord').onclick = async () => {
   $('discordStatus').textContent = 'Webhook effacé.';
   $('discordStatus').style.color = '#64748b';
 };
+
+// Actions Telegram
+if ($('saveTelegram')) {
+  $('saveTelegram').onclick = async () => {
+    const token = ($('telegramToken')?.value || '').trim();
+    const chatId = ($('telegramChatId')?.value || '').trim();
+    const webhookUrl = ($('telegramWebhook')?.value || '').trim();
+
+    if (!webhookUrl && !token && !chatId) {
+      $('telegramStatus').textContent = '❌ Renseignez un Token + Chat ID, ou une URL de Webhook.';
+      $('telegramStatus').style.color = '#dc2626';
+      return;
+    }
+
+    if (!webhookUrl) {
+      if (!isValidTelegramToken(token)) {
+        $('telegramStatus').textContent = '❌ Jeton de bot invalide (obtenu auprès de @BotFather).';
+        $('telegramStatus').style.color = '#dc2626';
+        return;
+      }
+      if (!isValidTelegramChatId(chatId)) {
+        $('telegramStatus').textContent = '❌ Chat ID invalide (ex: @mon_canal ou identifiant numérique -100...).';
+        $('telegramStatus').style.color = '#dc2626';
+        return;
+      }
+    }
+
+    if (!await allowTelegram()) {
+      $('telegramStatus').textContent = '❌ Permission API Telegram refusée par le navigateur.';
+      $('telegramStatus').style.color = '#dc2626';
+      return;
+    }
+
+    await saveTelegramConfig({ botToken: token, chatId, webhookUrl });
+    $('telegramStatus').textContent = '✅ Paramètres Telegram enregistrés avec succès !';
+    $('telegramStatus').style.color = '#16a34a';
+  };
+}
+
+if ($('testTelegram')) {
+  $('testTelegram').onclick = async () => {
+    const token = ($('telegramToken')?.value || '').trim();
+    const chatId = ($('telegramChatId')?.value || '').trim();
+    const webhookUrl = ($('telegramWebhook')?.value || '').trim();
+
+    if (!webhookUrl && (!token || !chatId)) {
+      $('telegramStatus').textContent = '❌ Enregistrez d’abord des identifiants valides.';
+      $('telegramStatus').style.color = '#dc2626';
+      return;
+    }
+
+    $('telegramStatus').textContent = 'Envoi d’un message test vers Telegram…';
+    $('telegramStatus').style.color = '#0284c7';
+
+    try {
+      if (!await allowTelegram()) {
+        throw new Error('Permission API Telegram non accordée.');
+      }
+      const testMsg = buildTelegramMessage({
+        asin: 'TEST123456',
+        title: 'Test de connexion Amazon 4 Colonnes',
+        marketplace: 'FR',
+        price: '19,99',
+        currencySymbol: '€',
+        kind: 'amazon',
+        code: 'AMAZON',
+        label: 'Test Telegram réussi !',
+        seller: 'Amazon',
+        ship: 'Amazon'
+      });
+
+      await sendTelegramMessage({ token, chatId, webhookUrl, text: testMsg });
+      $('telegramStatus').textContent = '✅ Message test reçu sur votre canal/chat Telegram !';
+      $('telegramStatus').style.color = '#16a34a';
+    } catch (err) {
+      $('telegramStatus').textContent = '❌ Échec : ' + err.message;
+      $('telegramStatus').style.color = '#dc2626';
+    }
+  };
+}
+
+if ($('clearTelegram')) {
+  $('clearTelegram').onclick = async () => {
+    await clearTelegramConfig();
+    if ($('telegramToken')) $('telegramToken').value = '';
+    if ($('telegramChatId')) $('telegramChatId').value = '';
+    if ($('telegramWebhook')) $('telegramWebhook').value = '';
+    $('telegramStatus').textContent = 'Configuration Telegram effacée.';
+    $('telegramStatus').style.color = '#64748b';
+  };
+}
 
 // Actions Display
 $('saveDisplay').onclick = async () => {

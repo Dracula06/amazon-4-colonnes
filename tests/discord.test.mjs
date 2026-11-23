@@ -33,11 +33,22 @@ test('buildDiscordEmbed produit une structure d embed Discord conforme', () => {
   const first = embed.embeds[0];
   assert.ok(first.title.includes('AquaSonic'));
   assert.equal(first.color, 0x16836B);
-  assert.equal(first.fields.length, 6);
+  assert.equal(first.fields.length, 8);
   assert.equal(first.fields[0].value, '`B01MTLEKNA` (FR)');
   assert.equal(first.fields[1].value, '39,99 €');
   assert.ok(first.fields[2].value.includes('[AMAZON]'));
-  assert.ok(first.fields[5].value.includes('2 élément(s)'));
+  const cb = first.fields.find(f => f.name.includes('Cashback'));
+  assert.ok(cb);
+  assert.ok(cb.value.includes('Wanteeed'));
+  assert.ok(cb.value.includes('Poulpeo'));
+  assert.ok(cb.value.includes('iGraal'));
+  assert.ok(cb.value.includes('TopCashback'));
+  const ext = first.fields.find(f => f.name.includes('Extensions'));
+  assert.ok(ext);
+  assert.ok(ext.value.includes('VintHelp'));
+  assert.ok(ext.value.includes('BoostHelp'));
+  const inj = first.fields.find(f => f.name.includes('Composants'));
+  assert.ok(inj.value.includes('2 élément(s)'));
 });
 
 test('buildDiscordEmbed signale le LOCK pays quand la livraison est bloquée', () => {
@@ -67,4 +78,69 @@ test('buildDiscordEmbed signale le LOCK pays quand la livraison est bloquée', (
   assert.ok(lockField);
   assert.ok(lockField.value.includes('adresse FR'));
   assert.ok(lockField.value.includes('cannot be shipped'));
+});
+
+test('buildDiscordEmbed formate le prix enrichi Cas 1 (promotion & prix conseillé)', () => {
+  const embed = buildDiscordEmbed({
+    asin: 'B0CZPNWQFX',
+    marketplace: 'FR',
+    title: 'adidas Chaussure K',
+    url: 'https://www.amazon.fr/dp/B0CZPNWQFX',
+    price: '14,25 €',
+    discountRate: '-43%',
+    referencePrice: 'conseillé 25,00 €',
+    code: 'AMAZON',
+    label: 'Vendu et expédié par Amazon'
+  });
+
+  const fields = embed.embeds[0].fields;
+  const priceField = fields.find(f => f.name.includes('Prix repéré'));
+  assert.ok(priceField);
+  assert.equal(priceField.value, '14,25 €');
+
+  const refField = fields.find(f => f.name.includes('Prix conseillé'));
+  assert.ok(refField);
+  assert.equal(refField.name, '🎯 Prix conseillé');
+  assert.equal(refField.value, '25,00 €');
+
+  const dealField = fields.find(f => f.name.includes('Remise'));
+  assert.ok(dealField);
+  assert.equal(dealField.name, '🟢 Remise');
+  assert.equal(dealField.value, '-43% 🔥');
+});
+
+test('buildDiscordEmbed formate le prix enrichi Cas 2 (occasion vs offre neuve) et nettoie la logistique', () => {
+  const embed = buildDiscordEmbed({
+    asin: 'B0DG5BP4K1',
+    marketplace: 'FR',
+    title: 'Hama Montre connectée GPS',
+    url: 'https://www.amazon.fr/dp/B0DG5BP4K1',
+    price: '16,36 €',
+    condition: 'Occasion - Comme neuf',
+    newPrice: '58,74 €',
+    code: 'AMAZON',
+    label: 'Amazon Seconde main · expédié par Amazon',
+    seller: 'Amazon Seconde main',
+    ship: 'Amazon'
+  });
+
+  const fields = embed.embeds[0].fields;
+  const priceField = fields.find(f => f.name.includes('Prix repéré'));
+  assert.ok(priceField);
+  assert.equal(priceField.value, '16,36 € (Occasion - Comme neuf)');
+
+  const refField = fields.find(f => f.name.includes('Prix d’origine'));
+  assert.ok(refField);
+  assert.equal(refField.name, '🎯 Prix d’origine');
+  assert.equal(refField.value, 'neuf 58,74 €');
+
+  const dealField = fields.find(f => f.name.includes('Remise'));
+  assert.ok(dealField);
+  assert.equal(dealField.name, '🔴 Remise');
+  assert.equal(dealField.value, '-72% 🔥🔥🔥');
+
+  const logField = fields.find(f => f.name.includes('Logistique'));
+  assert.ok(logField);
+  assert.equal(logField.value, '**[AMAZON]** Amazon Seconde main');
+  assert.doesNotMatch(logField.value, /expédié par Amazon/);
 });

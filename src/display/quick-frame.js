@@ -19,7 +19,7 @@
   align-items: flex-end !important;
   gap: 10px !important;
   pointer-events: none !important;
-  max-width: 340px !important;
+  max-width: 270px !important;
 }
 #${STACK_ID} > * {
   pointer-events: auto !important;
@@ -30,24 +30,122 @@
   right: auto !important;
   z-index: auto !important;
   width: 100% !important;
-  max-width: 340px !important;
+  max-width: 270px !important;
 }
 #${FRAME_ID} {
-  width: 320px !important;
+  width: 260px !important;
   max-width: calc(100vw - 32px) !important;
   background: #ffffff !important;
   border: 2px solid #0f172a !important;
   border-radius: 12px !important;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.2) !important;
-  padding: 10px 12px !important;
-  font: 12.5px/1.4 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  padding: 8px 10px !important;
+  font: 11.5px/1.35 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   color: #0f172a !important;
   box-sizing: border-box !important;
   text-align: left !important;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), padding 0.22s ease, border-radius 0.22s ease, box-shadow 0.22s ease !important;
 }
 #${FRAME_ID}.al-collapsed {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 0 !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  background: #ffffff !important;
+  border: 2px solid #0284c7 !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18) !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), height 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.22s ease, padding 0.22s ease, box-shadow 0.22s ease !important;
+}
+#${FRAME_ID}.al-collapsed:not(:hover):not(:focus-within) {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+#${FRAME_ID}.al-collapsed:not(:hover):not(:focus-within) .al-qf-header {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+#${FRAME_ID}.al-collapsed:not(:hover):not(:focus-within) .al-qf-title-group {
+  width: 100% !important;
+  height: 100% !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+#${FRAME_ID}.al-collapsed:not(:hover):not(:focus-within) .al-qf-country {
+  font-size: 20px !important;
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+#${FRAME_ID}.al-collapsed:not(:hover):not(:focus-within) .al-qf-body,
+#${FRAME_ID}.al-collapsed:not(:hover):not(:focus-within) .al-qf-controls,
+#${FRAME_ID}.al-collapsed:not(:hover):not(:focus-within) .al-qf-pill,
+#${FRAME_ID}.al-collapsed:not(:hover):not(:focus-within) .al-qf-name-full,
+#${FRAME_ID}.al-collapsed:not(:hover):not(:focus-within) .al-qf-name-short,
+#${FRAME_ID}.al-collapsed:not(:hover):not(:focus-within) .al-qf-mini-hint {
+  display: none !important;
+}
+#${FRAME_ID}.al-collapsed:hover,
+#${FRAME_ID}.al-collapsed:focus-within {
+  width: 260px !important;
+  height: auto !important;
+  padding: 8px 10px !important;
+  border-radius: 12px !important;
+  border: 2px solid #0f172a !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.25) !important;
+  cursor: default !important;
+  display: block !important;
+  overflow: visible !important;
+}
+#${FRAME_ID}.al-collapsed:hover .al-qf-header,
+#${FRAME_ID}.al-collapsed:focus-within .al-qf-header {
   width: auto !important;
-  padding: 7px 11px !important;
+  height: auto !important;
+  justify-content: space-between !important;
+}
+#${FRAME_ID}.al-collapsed:hover .al-qf-title-group,
+#${FRAME_ID}.al-collapsed:focus-within .al-qf-title-group {
+  width: auto !important;
+  height: auto !important;
+  justify-content: flex-start !important;
+}
+#${FRAME_ID}.al-collapsed:hover .al-qf-country,
+#${FRAME_ID}.al-collapsed:focus-within .al-qf-country {
+  font-size: 13px !important;
+}
+#${FRAME_ID}.al-collapsed:hover .al-qf-name-full,
+#${FRAME_ID}.al-collapsed:focus-within .al-qf-name-full {
+  display: inline !important;
+}
+#${FRAME_ID}.al-collapsed:hover .al-qf-body,
+#${FRAME_ID}.al-collapsed:focus-within .al-qf-body {
+  display: flex !important;
+  animation: alFadeIn 0.2s ease-out !important;
+}
+#${FRAME_ID}.al-collapsed:hover .al-qf-controls,
+#${FRAME_ID}.al-collapsed:focus-within .al-qf-controls {
+  display: flex !important;
+}
+#${FRAME_ID}.al-collapsed:hover .al-qf-pill,
+#${FRAME_ID}.al-collapsed:focus-within .al-qf-pill {
+  display: inline-block !important;
+}
+@keyframes alFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 #${FRAME_ID} .al-qf-header {
   display: flex !important;
@@ -124,12 +222,12 @@
   color: #0f172a !important;
 }
 #${FRAME_ID} .al-qf-body {
-  margin-top: 8px !important;
-  padding-top: 8px !important;
+  margin-top: 6px !important;
+  padding-top: 6px !important;
   border-top: 1px solid #e2e8f0 !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 7px !important;
+  gap: 5px !important;
 }
 #${FRAME_ID}.al-collapsed .al-qf-body {
   display: none !important;
@@ -138,26 +236,26 @@
   display: flex !important;
   align-items: center !important;
   flex-wrap: wrap !important;
-  gap: 5px !important;
-  font-size: 11.5px !important;
+  gap: 4px !important;
+  font-size: 11px !important;
   color: #475569 !important;
 }
 #${FRAME_ID} .al-qf-row {
   display: flex !important;
   align-items: center !important;
-  gap: 5px !important;
+  gap: 4px !important;
 }
 #${FRAME_ID} .al-qf-label {
-  font-size: 11px !important;
+  font-size: 10.5px !important;
   font-weight: 600 !important;
   color: #475569 !important;
-  min-width: 32px !important;
+  min-width: 26px !important;
 }
 #${FRAME_ID} .al-qf-input {
   flex: 1 !important;
   min-width: 0 !important;
-  padding: 4px 7px !important;
-  font: 12px/1.3 monospace !important;
+  padding: 3px 6px !important;
+  font: 11px/1.25 monospace !important;
   border: 1px solid #cbd5e1 !important;
   border-radius: 6px !important;
   background: #f8fafc !important;
@@ -169,13 +267,13 @@
   background: #ffffff !important;
 }
 #${FRAME_ID} .al-qf-hint {
-  font-size: 10.5px !important;
+  font-size: 10px !important;
   color: #64748b !important;
 }
 #${FRAME_ID} .al-qf-actions {
   display: flex !important;
   flex-wrap: wrap !important;
-  gap: 6px !important;
+  gap: 4px !important;
 }
 #${FRAME_ID} .al-qf-btn {
   flex: 1 1 auto !important;
@@ -184,12 +282,12 @@
   background: #ffffff !important;
   color: #0f172a !important;
   border-radius: 6px !important;
-  padding: 5px 8px !important;
-  font: 600 11.5px/1.3 system-ui, sans-serif !important;
+  padding: 4px 6px !important;
+  font: 600 11px/1.25 system-ui, sans-serif !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 4px !important;
+  gap: 3px !important;
 }
 #${FRAME_ID} .al-qf-btn:hover {
   background: #f1f5f9 !important;
@@ -218,6 +316,126 @@
 #${FRAME_ID} .al-qf-btn-discord:hover {
   background: #4752c4 !important;
 }
+#${FRAME_ID} .al-qf-btn-telegram {
+  background: #229ED9 !important;
+  color: #ffffff !important;
+  border-color: #1c8ec4 !important;
+}
+#${FRAME_ID} .al-qf-btn-telegram:hover {
+  background: #1c8ec4 !important;
+}
+#${FRAME_ID} .al-qf-btn-github {
+  background: #24292f !important;
+  color: #ffffff !important;
+  border-color: #1b1f24 !important;
+}
+#${FRAME_ID} .al-qf-btn-github:hover {
+  background: #1b1f24 !important;
+}
+#${FRAME_ID} .al-qf-btn-keepa {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  border-color: #0369a1 !important;
+}
+#${FRAME_ID} .al-qf-btn-keepa:hover {
+  background: #0369a1 !important;
+}
+#${FRAME_ID} .al-qf-keepa-chart {
+  margin-top: 5px !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+  background: #ffffff !important;
+}
+#${FRAME_ID} .al-qf-keepa-chart img {
+  width: 100% !important;
+  height: auto !important;
+  display: block !important;
+  cursor: pointer !important;
+}
+#${FRAME_ID} .al-qf-btn-collector {
+  flex: 1 1 100% !important;
+  background: #f8fafc !important;
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
+  margin-top: 2px !important;
+}
+#${FRAME_ID} .al-qf-btn-collector:hover {
+  background: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+}
+#${FRAME_ID} .al-qf-seller-box {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  padding: 5px 7px !important;
+  font-size: 11px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+#${FRAME_ID} .al-qf-seller-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  font-size: 11px !important;
+}
+#${FRAME_ID} .al-qf-badge-kind {
+  display: inline-block !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+}
+#${FRAME_ID} .al-badge-amazon { background: #d1fae5 !important; color: #065f46 !important; border: 1px solid #10b981 !important; }
+#${FRAME_ID} .al-badge-fba { background: #e0f2fe !important; color: #0369a1 !important; border: 1px solid #0ea5e9 !important; }
+#${FRAME_ID} .al-badge-fbm { background: #fef3c7 !important; color: #92400e !important; border: 1px solid #f59e0b !important; }
+#${FRAME_ID} .al-badge-unknown { background: #f1f5f9 !important; color: #475569 !important; border: 1px solid #94a3b8 !important; }
+#${FRAME_ID} .al-qf-seller-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 4px 8px !important;
+  color: #334155 !important;
+  font-size: 11.5px !important;
+}
+#${FRAME_ID} .al-qf-lock-alert {
+  padding: 6px 8px !important;
+  background: #fef2f2 !important;
+  border: 1px solid #fca5a5 !important;
+  border-radius: 6px !important;
+  color: #991b1b !important;
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+}
+#${FRAME_ID} .al-qf-lock-alert strong {
+  color: #b91c1c !important;
+  display: block !important;
+  margin-bottom: 2px !important;
+}
+#${FRAME_ID} .al-qf-lock-alert .al-lock-quote {
+  font-style: italic !important;
+  color: #b91c1c !important;
+  margin-top: 2px !important;
+  display: block !important;
+}
+#${FRAME_ID} .al-qf-origin-alert {
+  padding: 5px 8px !important;
+  background: #e0f2fe !important;
+  border: 1px solid #7dd3fc !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  color: #0369a1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+#${FRAME_ID} .al-qf-origin-alert a {
+  color: #0284c7 !important;
+  font-weight: 600 !important;
+  text-decoration: underline !important;
+}
 #${FRAME_ID} .al-qf-status {
   font-size: 11px !important;
   min-height: 15px !important;
@@ -226,6 +444,217 @@
 }
 #${FRAME_ID} .al-qf-status.is-ok { color: #15803d !important; }
 #${FRAME_ID} .al-qf-status.is-err { color: #b91c1c !important; }
+
+#al-keepa-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+  opacity: 1 !important;
+  animation: alFadeIn 0.18s ease-out !important;
+}
+@keyframes alFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+#al-keepa-modal {
+  background: #ffffff !important;
+  border-radius: 12px !important;
+  width: 95vw !important;
+  max-width: 1400px !important;
+  height: 92vh !important;
+  max-height: 94vh !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.5) !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  color: #0f172a !important;
+  box-sizing: border-box !important;
+  text-align: left !important;
+}
+.al-km-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 8px 16px !important;
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  flex-shrink: 0 !important;
+}
+.al-km-title-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+.al-km-header-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.al-km-zoom-group {
+  display: flex !important;
+  align-items: center !important;
+  background: #e2e8f0 !important;
+  border-radius: 6px !important;
+  padding: 1px !important;
+  gap: 2px !important;
+}
+.al-km-btn-zoom {
+  background: transparent !important;
+  border: none !important;
+  width: 22px !important;
+  height: 22px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #334155 !important;
+  border-radius: 4px !important;
+  line-height: 1 !important;
+  padding: 0 !important;
+}
+.al-km-btn-zoom:hover {
+  background: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+.al-km-zoom-label {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  padding: 0 4px !important;
+  min-width: 32px !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  user-select: none !important;
+}
+.al-km-title {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+}
+.al-km-badge {
+  font-size: 11px !important;
+  padding: 2px 8px !important;
+  border-radius: 999px !important;
+  background: #e2e8f0 !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+.al-km-badge-country {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+}
+.al-km-close {
+  background: #e2e8f0 !important;
+  border: none !important;
+  color: #475569 !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: background 0.15s ease, color 0.15s ease !important;
+}
+.al-km-close:hover {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+.al-km-body {
+  padding: 0 !important;
+  margin: 0 !important;
+  background: #ffffff !important;
+  display: flex !important;
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+.al-km-iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  display: block !important;
+  flex: 1 1 auto !important;
+  background: #ffffff !important;
+}
+.al-km-loading-spinner {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  background: rgba(15, 23, 42, 0.8) !important;
+  color: #ffffff !important;
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  pointer-events: none !important;
+  display: none !important;
+  z-index: 10 !important;
+}
+.al-km-footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 6px 16px !important;
+  background: #f8fafc !important;
+  border-top: 1px solid #e2e8f0 !important;
+  font-size: 11.5px !important;
+  color: #64748b !important;
+  flex-shrink: 0 !important;
+}
+.al-km-footer-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+.al-km-btn-ext {
+  padding: 4px 10px !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  color: #334155 !important;
+  font-size: 11.5px !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+.al-km-btn-ext:hover {
+  background: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+}
+.al-km-btn-dismiss {
+  padding: 4px 12px !important;
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border: 1px solid #0f172a !important;
+  border-radius: 6px !important;
+  font-size: 11.5px !important;
+  cursor: pointer !important;
+  font-weight: 500 !important;
+}
+.al-km-btn-dismiss:hover {
+  background: #1e293b !important;
+}
 `;
 
   function ensureFrameStyle(doc = document) {
@@ -249,9 +678,11 @@
 
   function readCollapsed() {
     try {
-      return sessionStorage.getItem(COLLAPSE_STORAGE_KEY) === '1';
+      const v = sessionStorage.getItem(COLLAPSE_STORAGE_KEY);
+      if (v === null) return true;
+      return v === '1';
     } catch {
-      return false;
+      return true;
     }
   }
 
@@ -320,11 +751,11 @@
     }
     const rect = typeof stack.getBoundingClientRect === 'function'
       ? stack.getBoundingClientRect()
-      : { width: 320, height: 180 };
+      : { width: 260, height: 180 };
     const clamped = clampPosition(
       pos.left,
       pos.top,
-      rect.width || 320,
+      rect.width || 260,
       rect.height || 180,
       globalThis.innerWidth || 1280,
       globalThis.innerHeight || 800
@@ -552,12 +983,16 @@
       isProductPage = false,
       logistics = null,
       shippingRestriction = null,
+      originRedirect = null,
       product = null,
       visible = true,
       position = null,
       onSaveTag,
       onSavePosition,
-      onShareDiscord
+      onShareDiscord,
+      onShareTelegram,
+      onShareGitHub,
+      onOpenCollector
     } = ctx || {};
 
     const existing = doc.getElementById(FRAME_ID);
@@ -640,10 +1075,17 @@
       ssExcluded: Boolean(siteStripe?.excludedProduct),
       isProductPage,
       asin: product?.asin || '',
-      price: product?.price || '',
+      price: product?.formattedPrice || product?.price || '',
+      discountRate: product?.discountRate || '',
+      referencePrice: product?.referencePrice || '',
+      newPrice: product?.newPrice || '',
+      ean: product?.ean || '',
       logCode: logistics?.code || '',
       logKind: logistics?.kind || '',
+      seller: logistics?.seller || '',
+      ship: logistics?.ship || '',
       locked: Boolean(shippingRestriction?.blocked),
+      origin: originRedirect?.cleanUrl || '',
       activeTag,
       tagSource,
       savedTag,
@@ -670,8 +1112,14 @@
 
     const countrySpan = doc.createElement('span');
     countrySpan.className = 'al-qf-country';
-    countrySpan.textContent = `${country.flag} Amazon ${country.code}`;
+    countrySpan.innerHTML = `<span>${country.flag}</span> <span class="al-qf-name-short">${country.code}</span><span class="al-qf-name-full">Amazon ${country.code}</span>`;
     titleGroup.append(countrySpan);
+
+    const miniHint = doc.createElement('span');
+    miniHint.className = 'al-qf-mini-hint';
+    miniHint.textContent = '⚡';
+    miniHint.title = 'Survolez pour afficher les outils et liens';
+    titleGroup.append(miniHint);
 
     if (siteStripe?.present) {
       const ssPill = doc.createElement('span');
@@ -701,9 +1149,9 @@
     const toggleBtn = doc.createElement('button');
     toggleBtn.type = 'button';
     toggleBtn.className = 'al-qf-icon-btn';
-    toggleBtn.title = collapsed ? 'Déplier le cadre' : 'Réduire le cadre';
+    toggleBtn.title = collapsed ? 'Épingler le cadre ouvert' : 'Réduire en mode discret (dépliage au survol)';
     toggleBtn.setAttribute('aria-label', toggleBtn.title);
-    toggleBtn.textContent = collapsed ? '+' : '−';
+    toggleBtn.textContent = collapsed ? '📌' : '−';
     toggleBtn.onclick = () => {
       writeCollapsed(!collapsed);
       frame.dataset.signature = '';
@@ -729,14 +1177,95 @@
     const body = doc.createElement('div');
     body.className = 'al-qf-body';
 
-    if (isProductPage && (product?.asin || product?.price || siteStripe?.category)) {
+    // 1. Redirection d'origine (si présente)
+    if (originRedirect) {
+      const originBox = doc.createElement('div');
+      originBox.className = 'al-qf-origin-alert';
+      originBox.innerHTML = `
+        <span>${originRedirect.flag} <strong>Lien initial Amazon ${originRedirect.name}</strong></span>
+        <a href="${originRedirect.cleanUrl}" target="_blank" rel="noopener noreferrer">↗ Ouvrir</a>
+      `;
+      body.append(originBox);
+    }
+
+    // 2. LOCK pays (si bloqué)
+    if (shippingRestriction?.blocked) {
+      const lockBox = doc.createElement('div');
+      lockBox.className = 'al-qf-lock-alert';
+      lockBox.innerHTML = `
+        <strong>🔒 ${shippingRestriction.title || 'LOCK pays'}</strong>
+        <span>${shippingRestriction.explanation || 'Livraison restreinte sur cette adresse.'}</span>
+        ${shippingRestriction.detectedMessage ? `<span class="al-lock-quote">« ${shippingRestriction.detectedMessage} »</span>` : ''}
+      `;
+      body.append(lockBox);
+    }
+
+    // 3. Fiche & Vendeur
+    if (isProductPage && logistics) {
+      const sellerBox = doc.createElement('div');
+      sellerBox.className = 'al-qf-seller-box';
+
+      const sellerHeader = doc.createElement('div');
+      sellerHeader.className = 'al-qf-seller-header';
+      const kindClass = `al-badge-${logistics.kind || 'unknown'}`;
+      sellerHeader.innerHTML = `
+        <span class="al-qf-badge-kind ${kindClass}">[${logistics.code || 'À VÉRIFIER'}]</span>
+        <strong>${logistics.label || 'Vendeur / expéditeur'}</strong>
+      `;
+
+      const sellerDetails = doc.createElement('div');
+      sellerDetails.className = 'al-qf-seller-row';
+      sellerDetails.innerHTML = `
+        <span><strong>Vendeur :</strong> ${logistics.seller || 'Non identifié'}</span>
+        <span style="color:#cbd5e1;">·</span>
+        <span><strong>Expéditeur :</strong> ${logistics.ship || 'Non identifié'}</span>
+      `;
+
+      sellerBox.append(sellerHeader, sellerDetails);
+      body.append(sellerBox);
+    }
+
+    if (isProductPage && (product?.asin || product?.price || siteStripe?.category || product?.ean)) {
       const meta = doc.createElement('div');
       meta.className = 'al-qf-meta';
-      const chunks = [];
-      if (product?.asin) chunks.push(`ASIN: ${product.asin}`);
-      if (product?.price) chunks.push(`Prix: ${product.price}`);
-      if (siteStripe?.category) chunks.push(`Cat.: ${siteStripe.category}`);
-      meta.textContent = chunks.join(' · ');
+
+      let hasPrev = false;
+      const addSep = () => {
+        if (hasPrev) meta.append(doc.createTextNode(' · '));
+        hasPrev = true;
+      };
+
+      if (product?.asin) {
+        addSep();
+        const s = doc.createElement('span');
+        s.textContent = `ASIN: ${product.asin}`;
+        meta.append(s);
+      }
+      if (product?.ean) {
+        addSep();
+        const a = doc.createElement('a');
+        a.href = `https://www.barcodelookup.com/${product.ean}`;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.textContent = `EAN: ${product.ean} ↗`;
+        a.title = 'Rechercher les informations du produit sur BarcodeLookup';
+        a.style.color = '#0284c7';
+        a.style.textDecoration = 'underline';
+        meta.append(a);
+      }
+      const displayPrice = product?.formattedPrice || (globalThis.ALPricing?.formatEnrichedPrice ? globalThis.ALPricing.formatEnrichedPrice(product) : product?.price);
+      if (displayPrice) {
+        addSep();
+        const s = doc.createElement('span');
+        s.textContent = `Prix: ${displayPrice}`;
+        meta.append(s);
+      }
+      if (siteStripe?.category) {
+        addSep();
+        const s = doc.createElement('span');
+        s.textContent = `Cat.: ${siteStripe.category}`;
+        meta.append(s);
+      }
       body.append(meta);
     }
 
@@ -886,11 +1415,297 @@
       actions.append(discordBtn);
     }
 
-    body.append(actions, statusLine);
+    if (isProductPage && typeof onShareTelegram === 'function') {
+      const telegramBtn = doc.createElement('button');
+      telegramBtn.type = 'button';
+      telegramBtn.className = 'al-qf-btn al-qf-btn-telegram';
+      telegramBtn.textContent = '✈️ Telegram';
+      telegramBtn.title = 'Partager cette offre sur votre canal Telegram';
+      telegramBtn.onclick = async () => {
+        setFrameStatus('Envoi vers Telegram…');
+        const res = await onShareTelegram(urlInput.value || generatedUrl);
+        setFrameStatus(
+          res?.ok ? '✅ Partagé sur Telegram !' : `❌ ${res?.error || 'Échec Telegram'}`,
+          res?.ok ? 'is-ok' : 'is-err'
+        );
+      };
+      actions.append(telegramBtn);
+    }
+
+    if (isProductPage && typeof onShareGitHub === 'function') {
+      const githubBtn = doc.createElement('button');
+      githubBtn.type = 'button';
+      githubBtn.className = 'al-qf-btn al-qf-btn-github';
+      githubBtn.textContent = '🐙 GitHub';
+      githubBtn.title = 'Sauvegarder la capture sur GitHub';
+      githubBtn.onclick = async () => {
+        setFrameStatus('Lancement du partage GitHub…');
+        const res = await onShareGitHub();
+        setFrameStatus(
+          res?.ok ? '✅ Capture envoyée vers GitHub !' : `❌ ${res?.error || 'Erreur GitHub'}`,
+          res?.ok ? 'is-ok' : 'is-err'
+        );
+      };
+      actions.append(githubBtn);
+    }
+
+    if (isProductPage && product?.asin) {
+      const keepaBtn = doc.createElement('button');
+      keepaBtn.type = 'button';
+      keepaBtn.className = 'al-qf-btn al-qf-btn-keepa';
+      keepaBtn.textContent = '📊 Keepa (Surimpression)';
+      keepaBtn.title = 'Afficher l\'historique et les statistiques Keepa en surimpression sans quitter Amazon';
+      keepaBtn.onclick = () => {
+        openKeepaOverlay(doc, { asin: product.asin, country, product });
+      };
+      actions.append(keepaBtn);
+    }
+
+    if (typeof onOpenCollector === 'function') {
+      const collectorBtn = doc.createElement('button');
+      collectorBtn.type = 'button';
+      collectorBtn.className = 'al-qf-btn al-qf-btn-collector';
+      collectorBtn.textContent = '📚 Collecteur complet';
+      collectorBtn.title = 'Ouvrir la bibliothèque et le collecteur avancé';
+      collectorBtn.onclick = () => {
+        onOpenCollector();
+      };
+      actions.append(collectorBtn);
+    }
+
+    if (isProductPage && product?.asin) {
+      const chartDomain = (country?.tld || '').replace(/^\./, '').toLowerCase() || 'fr';
+      const chartUrl = `https://graph.keepa.com/pricehistory.png?asin=${product.asin}&domain=${chartDomain}&amazon=1&new=1&used=1&range=90`;
+
+      const chartToggleBtn = doc.createElement('button');
+      chartToggleBtn.type = 'button';
+      chartToggleBtn.className = 'al-qf-btn';
+      chartToggleBtn.style.cssText = 'font-size:11px!important;padding:4px 8px!important;margin-top:4px!important;background:#f8fafc!important;width:100%!important;';
+      chartToggleBtn.textContent = '📈 Afficher aperçu rapide (90j)';
+
+      const chartBox = doc.createElement('div');
+      chartBox.className = 'al-qf-keepa-chart';
+      chartBox.style.display = 'none';
+
+      chartToggleBtn.onclick = () => {
+        if (chartBox.style.display === 'none') {
+          chartBox.style.display = 'block';
+          if (!chartBox.hasChildNodes()) {
+            const img = doc.createElement('img');
+            img.src = chartUrl;
+            img.alt = 'Historique des prix Keepa (Amazon, Neuf, Occasion)';
+            img.title = 'Cliquez pour ouvrir la vue surimpression agrandie';
+            img.onclick = () => {
+              openKeepaOverlay(doc, { asin: product.asin, country, product });
+            };
+            chartBox.append(img);
+          }
+          chartToggleBtn.textContent = '📉 Masquer aperçu rapide';
+        } else {
+          chartBox.style.display = 'none';
+          chartToggleBtn.textContent = '📈 Afficher aperçu rapide (90j)';
+        }
+      };
+      body.append(actions, chartToggleBtn, chartBox, statusLine);
+    } else {
+      body.append(actions, statusLine);
+    }
     frame.append(body);
     setupStackDragging(stack, header, onSavePosition);
     syncStackPosition();
     return frame;
+  }
+
+  function openKeepaOverlay(doc = document, { asin, country, product } = {}) {
+    if (!doc || !asin) return;
+
+    const existing = doc.getElementById('al-keepa-overlay');
+    if (existing) {
+      existing.remove();
+    }
+
+    const keepaDomains = { 'com': 1, 'co.uk': 2, 'de': 3, 'fr': 4, 'co.jp': 5, 'ca': 6, 'it': 8, 'es': 9 };
+    const domainKey = (country?.tld || '').replace(/^\./, '').toLowerCase() || 'fr';
+    const domainId = keepaDomains[domainKey] || 4;
+    const keepaInteractiveUrl = `https://keepa.com/#!product/${domainId}-${asin}`;
+
+    const overlay = doc.createElement('div');
+    overlay.id = 'al-keepa-overlay';
+    overlay.className = 'notranslate';
+    overlay.setAttribute('translate', 'no');
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+
+    const modal = doc.createElement('div');
+    modal.id = 'al-keepa-modal';
+    modal.className = 'notranslate';
+    modal.setAttribute('translate', 'no');
+
+    const header = doc.createElement('div');
+    header.className = 'al-km-header notranslate';
+    header.setAttribute('translate', 'no');
+
+    const titleRow = doc.createElement('div');
+    titleRow.className = 'al-km-title-row';
+
+    const title = doc.createElement('span');
+    title.className = 'al-km-title';
+    title.textContent = 'Keepa';
+
+    const badgeAsin = doc.createElement('span');
+    badgeAsin.className = 'al-km-badge';
+    badgeAsin.textContent = `ASIN: ${asin}`;
+
+    const badgeCountry = doc.createElement('span');
+    badgeCountry.className = 'al-km-badge al-km-badge-country';
+    badgeCountry.textContent = country?.name || domainKey.toUpperCase();
+
+    const initialEan = product?.ean || window._lastDetectedKeepaEan || '';
+    const badgeEan = doc.createElement('span');
+    badgeEan.className = 'al-km-badge al-km-badge-ean';
+    badgeEan.textContent = initialEan ? `EAN: ${initialEan}` : '';
+    badgeEan.style.display = initialEan ? 'inline-block' : 'none';
+
+    titleRow.append(title, badgeAsin, badgeCountry, badgeEan);
+
+    const headerRight = doc.createElement('div');
+    headerRight.className = 'al-km-header-right';
+
+    let currentZoom = 0.9;
+
+    const zoomGroup = doc.createElement('div');
+    zoomGroup.className = 'al-km-zoom-group';
+
+    const zoomOutBtn = doc.createElement('button');
+    zoomOutBtn.type = 'button';
+    zoomOutBtn.className = 'al-km-btn-zoom';
+    zoomOutBtn.textContent = '−';
+    zoomOutBtn.title = 'Dézoomer (réduire la taille)';
+
+    const zoomLabel = doc.createElement('span');
+    zoomLabel.className = 'al-km-zoom-label';
+    zoomLabel.textContent = '90%';
+    zoomLabel.title = 'Zoom actuel (clic pour réinitialiser à 90%)';
+
+    const zoomInBtn = doc.createElement('button');
+    zoomInBtn.type = 'button';
+    zoomInBtn.className = 'al-km-btn-zoom';
+    zoomInBtn.textContent = '+';
+    zoomInBtn.title = 'Zoomer (agrandir la taille)';
+
+    function setZoom(val) {
+      currentZoom = Math.round(Math.max(0.5, Math.min(1.5, val)) * 100) / 100;
+      zoomLabel.textContent = `${Math.round(currentZoom * 100)}%`;
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'KEEPA_SET_ZOOM', zoom: currentZoom }, '*');
+      }
+    }
+
+    zoomOutBtn.onclick = () => setZoom(currentZoom - 0.05);
+    zoomInBtn.onclick = () => setZoom(currentZoom + 0.05);
+    zoomLabel.onclick = () => setZoom(0.9);
+
+    zoomGroup.append(zoomOutBtn, zoomLabel, zoomInBtn);
+
+    const extLink = doc.createElement('a');
+    extLink.className = 'al-km-btn-ext';
+    extLink.href = keepaInteractiveUrl;
+    extLink.target = '_blank';
+    extLink.rel = 'noopener noreferrer';
+    extLink.textContent = 'Ouvrir sur Keepa.com ↗';
+    extLink.title = 'Consulter dans un onglet séparé si besoin';
+
+    const closeBtn = doc.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'al-km-close';
+    closeBtn.textContent = '✕';
+    closeBtn.title = 'Fermer (Échap)';
+
+    headerRight.append(zoomGroup, extLink, closeBtn);
+    header.append(titleRow, headerRight);
+
+    const body = doc.createElement('div');
+    body.className = 'al-km-body notranslate';
+    body.setAttribute('translate', 'no');
+
+    const iframe = doc.createElement('iframe');
+    iframe.className = 'al-km-iframe notranslate';
+    iframe.setAttribute('translate', 'no');
+    iframe.src = keepaInteractiveUrl;
+    iframe.setAttribute('allow', 'clipboard-read; clipboard-write');
+
+    const spinner = doc.createElement('div');
+    spinner.className = 'al-km-loading-spinner';
+    spinner.textContent = 'Chargement de Keepa...';
+    spinner.style.display = 'block';
+
+    body.append(iframe, spinner);
+
+    iframe.onload = () => {
+      spinner.style.display = 'none';
+    };
+
+    const footer = doc.createElement('div');
+    footer.className = 'al-km-footer notranslate';
+    footer.setAttribute('translate', 'no');
+
+    const footerHint = doc.createElement('span');
+    footerHint.textContent = 'Navigation Keepa interactive en direct — vous ne quittez pas votre page Amazon';
+
+    const footerActions = doc.createElement('div');
+    footerActions.className = 'al-km-footer-actions';
+
+    const dismissBtn = doc.createElement('button');
+    dismissBtn.type = 'button';
+    dismissBtn.className = 'al-km-btn-dismiss';
+    dismissBtn.textContent = 'Fermer';
+
+    footerActions.append(dismissBtn);
+    footer.append(footerHint, footerActions);
+
+    modal.append(header, body, footer);
+    overlay.append(modal);
+
+    function onKeepaMessage(e) {
+      if (e?.data && e.data.type === 'KEEPA_DETECTED_EAN' && e.data.ean) {
+        badgeEan.textContent = `EAN: ${e.data.ean}`;
+        badgeEan.style.display = 'inline-block';
+        if (product) product.ean = e.data.ean;
+      }
+    }
+    if (typeof window.addEventListener === 'function') {
+      window.addEventListener('message', onKeepaMessage);
+    }
+
+    function closeModal() {
+      if (typeof window.removeEventListener === 'function') {
+        window.removeEventListener('message', onKeepaMessage);
+      }
+      if (typeof doc.removeEventListener === 'function') {
+        doc.removeEventListener('keydown', onKeyDown);
+      }
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.remove(), 160);
+    }
+
+    function onKeyDown(e) {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    }
+
+    closeBtn.onclick = closeModal;
+    dismissBtn.onclick = closeModal;
+    overlay.onclick = (e) => {
+      if (e.target === overlay) {
+        closeModal();
+      }
+    };
+    if (typeof doc.addEventListener === 'function') {
+      doc.addEventListener('keydown', onKeyDown);
+    }
+
+    (doc.body || doc.documentElement).append(overlay);
   }
 
   globalThis.ALQuickFrame = Object.freeze({
@@ -899,6 +1714,7 @@
     clampPosition,
     ensureFloatingStack,
     triggerSiteStripeShortLink,
+    openKeepaOverlay,
     renderQuickFrame
   });
 })();

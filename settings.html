@@ -79,6 +79,31 @@
     <div id="discordStatus" class="desc" style="margin-top:10px;"></div>
   </div>
 
+  <!-- 1b. Intégration Telegram -->
+  <div class="card">
+    <h2>✈️ Intégration Telegram (Option B)</h2>
+    <p class="desc">Permet de partager instantanément une fiche analysée ou une capture d'offre directement dans un canal, groupe ou chat Telegram via l'API Bot officielle ou un webhook tiers.</p>
+    
+    <label for="telegramToken">Token du Bot Telegram</label>
+    <input id="telegramToken" type="password" placeholder="ex: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ..." autocomplete="off">
+    <div class="desc">Créé gratuitement en 30 secondes en envoyant <code>/newbot</code> à <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a> sur Telegram.</div>
+
+    <label for="telegramChatId" style="margin-top:12px;">Chat ID ou @nom_canal</label>
+    <input id="telegramChatId" type="text" placeholder="ex: @mon_canal_deals ou -100123456789" autocomplete="off">
+    <div class="desc">Identifiant du canal, du groupe ou de votre compte (pensez à ajouter votre bot en administrateur du canal pour qu'il puisse publier).</div>
+
+    <label for="telegramWebhook" style="margin-top:12px;">URL de Webhook relais (optionnel)</label>
+    <input id="telegramWebhook" type="password" placeholder="ex: https://mon-relais-webhook.com/... (optionnel)" autocomplete="off">
+    <div class="desc">Laissez vide si vous utilisez le Token + Chat ID direct. Utile uniquement si vous passez par un relais tiers (Make, n8n, Zapier).</div>
+
+    <div class="btn-group">
+      <button id="saveTelegram" class="primary">Enregistrer Telegram</button>
+      <button id="testTelegram">Tester l'envoi</button>
+      <button id="clearTelegram" class="danger">Effacer</button>
+    </div>
+    <div id="telegramStatus" class="desc" style="margin-top:10px;"></div>
+  </div>
+
   <!-- 2. Configuration d'affichage & Grille -->
   <div class="card">
     <h2>📐 Personnalisation d'affichage</h2>
@@ -143,6 +168,26 @@
 
     <h3 style="font-size:13px;margin-top:16px;">État de la synchronisation</h3>
     <pre id="status"></pre>
+  </div>
+
+  <!-- 4. Extensions Chrome & Cashback Recommandés -->
+  <div class="card">
+    <h2>✨ Extensions & Cashback Partenaires</h2>
+    <p class="desc">Retrouvez les outils et plateformes de parrainage intégrés à l'extension.</p>
+    <div style="margin-bottom:12px;">
+      <strong>🧩 Extensions Chrome recommandées :</strong>
+      <ul style="margin:6px 0 12px 20px;padding:0;font-size:13px;">
+        <li>👗 <a href="https://chromewebstore.google.com/detail/vinthelp/kjkbijmnpmphddjhjkilaobilleokmkg" target="_blank" rel="noopener"><strong>VintHelp</strong></a> : Gestion de dressing Vinted automatique</li>
+        <li>⚡ <a href="https://chromewebstore.google.com/detail/boosthelp/flfbfonaffaokkifdnpkgkaiaadcfcin" target="_blank" rel="noopener"><strong>BoostHelp</strong></a> : Boosts de favoris Vinted</li>
+      </ul>
+      <strong>💸 Applications Cashback :</strong>
+      <ul style="margin:6px 0 0 20px;padding:0;font-size:13px;">
+        <li>💸 <a href="https://wanteeed.com/join/5e2977dce7a94e7186be8e58c6d9141b" target="_blank" rel="noopener"><strong>Wanteeed</strong></a> : Jusqu’à 1,5% de cashback en direct sur Amazon</li>
+        <li>🐙 <a href="https://www.poulpeo.com/p/o039ab" target="_blank" rel="noopener"><strong>Poulpeo</strong></a> : 5€ offerts au premier cashback</li>
+        <li>🛍️ <a href="https://fr.igraal.com/parrainage?parrain=bleachcore&utm_medium=raf&utm_source=refer_friend" target="_blank" rel="noopener"><strong>iGraal</strong></a> : 3€ offerts à l'inscription</li>
+        <li>💶 <a href="https://www.topcashback.fr/ref/dracoule" target="_blank" rel="noopener"><strong>TopCashback</strong></a> : Taux de remboursement boostés</li>
+      </ul>
+    </div>
   </div>
 
   <script type="module" src="src/quick-share/settings.js"></script>

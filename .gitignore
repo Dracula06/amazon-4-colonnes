@@ -10,3 +10,5 @@ raw-captures/
 *.pfx
 node_modules/
 Gestion_Git.ps1.avant-correctif-*.bak
+
+_metadata/

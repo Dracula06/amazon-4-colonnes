@@ -3,6 +3,7 @@ import { MARKETPLACES } from '../library/marketplaces.js';
 
 const KEY_GITHUB = 'quickShareConfig';
 const KEY_DISCORD = 'discordConfig';
+const KEY_TELEGRAM = 'telegramConfig';
 const KEY_DISPLAY = 'displaySettings';
 const KEY_AFFILIATE_TAGS = 'affiliateTags';
 
@@ -48,6 +49,27 @@ export async function saveDiscordConfig(webhookUrl) {
 
 export async function clearDiscordConfig() {
   await chrome.storage.local.remove(KEY_DISCORD);
+}
+
+export async function readTelegramConfig() {
+  const x = await chrome.storage.local.get(KEY_TELEGRAM);
+  return x[KEY_TELEGRAM] || null;
+}
+
+export async function saveTelegramConfig({ botToken, chatId, webhookUrl } = {}) {
+  await chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' });
+  await chrome.storage.local.set({
+    [KEY_TELEGRAM]: {
+      botToken: String(botToken || '').trim(),
+      chatId: String(chatId || '').trim(),
+      webhookUrl: String(webhookUrl || '').trim(),
+      updatedAt: new Date().toISOString()
+    }
+  });
+}
+
+export async function clearTelegramConfig() {
+  await chrome.storage.local.remove(KEY_TELEGRAM);
 }
 
 export async function readDisplaySettings() {
