@@ -9,9 +9,13 @@ raw-captures/
 *.p12
 *.pfx
 node_modules/
-Gestion_Git.ps1.avant-correctif-*.bak
+*.bak
 
 _metadata/
 
 # Captures DOM Amazon : stockage local uniquement, ne jamais versionner
 bibliotheque-pages/
+
+# Scripts locaux d'automatisation Windows (conservés en local, exclus du dépôt public)
+*.bat
+*.ps1

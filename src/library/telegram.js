@@ -229,25 +229,87 @@ export function buildTelegramMessage(info = {}) {
 }
 
 /**
+ * Définit une ou plusieurs réactions sur un message Telegram publié.
+ * @param {object} options
+ * @param {string} options.token
+ * @param {string|number} options.chatId
+ * @param {number} options.messageId
+ * @param {string|string[]} [options.reaction]
+ * @returns {Promise<boolean>}
+ */
+export async function setTelegramReaction({ token, chatId, messageId, reaction = '🔥' }) {
+  if (!token || !chatId || !messageId) return false;
+  const cleanToken = String(token).trim();
+  const cleanChatId = String(chatId).trim();
+  const apiUrl = `https://api.telegram.org/bot${cleanToken}/setMessageReaction`;
+
+  const list = Array.isArray(reaction) ? reaction : [reaction];
+  const payloadList = list.filter(Boolean).map(emoji => ({ type: 'emoji', emoji }));
+  if (payloadList.length === 0) return false;
+
+  try {
+    const res = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: cleanChatId,
+        message_id: messageId,
+        reaction: payloadList
+      })
+    });
+
+    if (!res.ok && payloadList.length > 1) {
+      // Si Telegram refuse les réactions multiples pour un bot non-premium, repli sur 1 seule
+      const fallbackRes = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: cleanChatId,
+          message_id: messageId,
+          reaction: [payloadList[0]]
+        })
+      });
+      return fallbackRes.ok;
+    }
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Envoie un message vers Telegram via Bot API ou Webhook tiers.
  * @param {object} options
  * @param {string} [options.token]
  * @param {string|number} [options.chatId]
  * @param {string} [options.webhookUrl]
  * @param {string} options.text
+ * @param {object} [options.replyMarkup]
+ * @param {string|string[]} [options.initialReaction]
  * @returns {Promise<{ ok: boolean, status: number, result?: any }>}
  */
-export async function sendTelegramMessage({ token, chatId, webhookUrl, text }) {
+export async function sendTelegramMessage({
+  token,
+  chatId,
+  webhookUrl,
+  text,
+  replyMarkup,
+  initialReaction = ['👍', '🔥', '👎']
+}) {
   if (webhookUrl && String(webhookUrl).trim().startsWith('http')) {
+    const payload = {
+      chat_id: chatId ? String(chatId).trim() : undefined,
+      text,
+      parse_mode: 'HTML',
+      disable_web_page_preview: false
+    };
+    if (replyMarkup) {
+      payload.reply_markup = replyMarkup;
+    }
     const res = await fetch(String(webhookUrl).trim(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId ? String(chatId).trim() : undefined,
-        text,
-        parse_mode: 'HTML',
-        disable_web_page_preview: false
-      })
+      body: JSON.stringify(payload)
     });
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
@@ -267,15 +329,20 @@ export async function sendTelegramMessage({ token, chatId, webhookUrl, text }) {
   }
 
   const apiUrl = `https://api.telegram.org/bot${cleanToken}/sendMessage`;
+  const payload = {
+    chat_id: cleanChatId,
+    text,
+    parse_mode: 'HTML',
+    disable_web_page_preview: false
+  };
+  if (replyMarkup) {
+    payload.reply_markup = replyMarkup;
+  }
+
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: cleanChatId,
-      text,
-      parse_mode: 'HTML',
-      disable_web_page_preview: false
-    })
+    body: JSON.stringify(payload)
   });
 
   const body = await response.json().catch(() => null);
@@ -283,6 +350,15 @@ export async function sendTelegramMessage({ token, chatId, webhookUrl, text }) {
   if (!response.ok || !body?.ok) {
     const desc = body?.description || `HTTP ${response.status}`;
     throw new Error(`Échec de l'envoi Telegram : ${desc}`);
+  }
+
+  if (body?.result?.message_id && initialReaction) {
+    await setTelegramReaction({
+      token: cleanToken,
+      chatId: cleanChatId,
+      messageId: body.result.message_id,
+      reaction: initialReaction
+    }).catch(() => {});
   }
 
   return { ok: true, status: response.status, result: body.result };

@@ -9,7 +9,8 @@ import {
   isValidTelegramToken,
   isValidTelegramChatId,
   buildTelegramMessage,
-  sendTelegramMessage
+  sendTelegramMessage,
+  setTelegramReaction
 } from '../src/library/telegram.js';
 
 test('escapeTelegramHtml neutralise les balises et caractères spéciaux', () => {
@@ -201,4 +202,72 @@ test('sendTelegramMessage valide les paramètres avant fetch', async () => {
     () => sendTelegramMessage({ token: '123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ12345678', chatId: 'bad', text: 'hello' }),
     /Chat ID Telegram invalide/
   );
+});
+
+test('sendTelegramMessage accepte replyMarkup et prépare le payload avec inline_keyboard', async () => {
+  // Test avec une URL de webhook pour intercepter le payload sans appeler Telegram
+  let capturedBody = null;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, opts) => {
+    capturedBody = JSON.parse(opts.body);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true, result: {} }),
+      text: async () => ''
+    };
+  };
+
+  try {
+    await sendTelegramMessage({
+      token: '123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ12345678',
+      chatId: '-1001234567890',
+      text: 'Message test',
+      replyMarkup: {
+        inline_keyboard: [[{ text: '🔗 Voir sur Amazon', url: 'https://www.amazon.fr' }]]
+      }
+    });
+
+    assert.ok(capturedBody);
+    assert.equal(capturedBody.chat_id, '-1001234567890');
+    assert.deepEqual(capturedBody.reply_markup, {
+      inline_keyboard: [[{ text: '🔗 Voir sur Amazon', url: 'https://www.amazon.fr' }]]
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('setTelegramReaction formate et soumet la réaction avec repli', async () => {
+  const calls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, opts) => {
+    calls.push({ url, body: JSON.parse(opts.body) });
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true, result: true })
+    };
+  };
+
+  try {
+    const success = await setTelegramReaction({
+      token: '123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ12345678',
+      chatId: '-1001234567890',
+      messageId: 42,
+      reaction: ['👍', '🔥', '👎']
+    });
+
+    assert.equal(success, true);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].body.chat_id, '-1001234567890');
+    assert.equal(calls[0].body.message_id, 42);
+    assert.deepEqual(calls[0].body.reaction, [
+      { type: 'emoji', emoji: '👍' },
+      { type: 'emoji', emoji: '🔥' },
+      { type: 'emoji', emoji: '👎' }
+    ]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

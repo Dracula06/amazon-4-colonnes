@@ -3,7 +3,8 @@ import {
   readDiscordConfig, saveDiscordConfig, clearDiscordConfig,
   readTelegramConfig, saveTelegramConfig, clearTelegramConfig,
   readDisplaySettings, saveDisplaySettings,
-  readAffiliateTags, saveAffiliateTags
+  readAffiliateTags, saveAffiliateTags,
+  exportAllConfig, importAllConfig
 } from './config.js';
 import { allowGitHub } from '../library/github.js';
 import { isValidDiscordWebhook, sendDiscordWebhook, buildDiscordEmbed } from '../library/discord.js';
@@ -198,6 +199,7 @@ if ($('testTelegram')) {
         asin: 'TEST123456',
         title: 'Test de connexion Amazon 4 Colonnes',
         marketplace: 'FR',
+        url: 'https://www.amazon.fr',
         price: '19,99',
         currencySymbol: '€',
         kind: 'amazon',
@@ -207,7 +209,12 @@ if ($('testTelegram')) {
         ship: 'Amazon'
       });
 
-      await sendTelegramMessage({ token, chatId, webhookUrl, text: testMsg });
+      await sendTelegramMessage({
+        token,
+        chatId,
+        webhookUrl,
+        text: testMsg
+      });
       $('telegramStatus').textContent = '✅ Message test reçu sur votre canal/chat Telegram !';
       $('telegramStatus').style.color = '#16a34a';
     } catch (err) {
@@ -257,5 +264,50 @@ $('clearAffiliateTags').onclick = async () => {
   $('affiliateStatus').textContent = 'Tags Partenaires effacés.';
   $('affiliateStatus').style.color = '#64748b';
 };
+
+// Actions Backup & Restore
+if ($('exportConfig')) {
+  $('exportConfig').onclick = async () => {
+    try {
+      const data = await exportAllConfig();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `amazon-4-colonnes-config-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      $('backupStatus').textContent = '✅ Configuration exportée avec succès !';
+      $('backupStatus').style.color = '#16a34a';
+    } catch (err) {
+      $('backupStatus').textContent = `❌ Échec de l'export : ${err.message}`;
+      $('backupStatus').style.color = '#dc2626';
+    }
+  };
+}
+
+if ($('importConfigBtn') && $('importFileInput')) {
+  $('importConfigBtn').onclick = () => {
+    $('importFileInput').click();
+  };
+
+  $('importFileInput').onchange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      await importAllConfig(data);
+      await refreshAll();
+      $('backupStatus').textContent = '✅ Configuration importée et appliquée avec succès !';
+      $('backupStatus').style.color = '#16a34a';
+    } catch (err) {
+      $('backupStatus').textContent = `❌ Erreur lors de l'import : ${err.message}`;
+      $('backupStatus').style.color = '#dc2626';
+    } finally {
+      $('importFileInput').value = '';
+    }
+  };
+}
 
 refreshAll();
