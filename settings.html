@@ -148,10 +148,22 @@
     <div id="affiliateStatus" class="desc" style="margin-top:10px;"></div>
   </div>
 
+  <!-- 2c. Sauvegarde et Restauration de la Configuration -->
+  <div class="card">
+    <h2>💾 Sauvegarde & Restauration</h2>
+    <p class="desc">Exportez ou importez l'ensemble de vos paramètres (Telegram, Discord, GitHub, tags affiliés, affichage) dans un fichier JSON pour les sauvegarder ou les transférer facilement.</p>
+    <div class="btn-group">
+      <button id="exportConfig" class="primary">💾 Exporter la configuration</button>
+      <button id="importConfigBtn">📥 Importer un fichier</button>
+      <input type="file" id="importFileInput" accept=".json,application/json" style="display:none;">
+    </div>
+    <div id="backupStatus" class="desc" style="margin-top:10px;"></div>
+  </div>
+
   <!-- 3. GitHub Quick-Share -->
   <div class="card">
     <h2>🐙 Partage Rapide GitHub (Bibliothèque)</h2>
-    <p class="desc">Publication atomique des DOM compactés et contextualisés dans <strong>Dracula06/amazon-4-colonnes · main</strong>.</p>
+    <p class="desc">Publication atomique des DOM compactés et contextualisés dans <strong>Dracula06/amazon-dom-captures · main</strong>.</p>
     
     <label for="token">Jeton GitHub personnel (Contents: Read & write)</label>
     <input id="token" type="password" autocomplete="off" placeholder="ghp_... ou github_pat_...">

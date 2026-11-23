@@ -9,7 +9,7 @@ src/library/controller.js : orchestration UI uniquement.
 src/library/launcher.js : ouverture de l'outil depuis le popup.
 
 ## Utilisation
-Recharger l'extension et les onglets Amazon après mise à jour. Ouvrir le popup sur Amazon.fr puis Bibliothèque. Capturer. Exporter le brut local hors du dépôt si souhaité. Préparer la copie filtrée, relire le JSON et l'éditer si nécessaire. Entrer un jeton GitHub à permissions fines limité au dépôt Dracula06/amazon-4-colonnes, Contents : Read and write. Cocher l'autorisation et confirmer l'envoi. La permission api.github.com est demandée uniquement à ce stade. Le jeton reste dans la page, pas dans le stockage Chrome. Fermer la page pour effacer sa mémoire.
+Recharger l'extension et les onglets Amazon après mise à jour. Ouvrir le popup sur Amazon.fr puis Bibliothèque. Capturer. Exporter le brut local hors du dépôt si souhaité. Préparer la copie filtrée, relire le JSON et l'éditer si nécessaire. Entrer un jeton GitHub à permissions fines limité au dépôt Dracula06/amazon-dom-captures, Contents : Read and write. Cocher l'autorisation et confirmer l'envoi. La permission api.github.com est demandée uniquement à ce stade. Le jeton reste dans la page, pas dans le stockage Chrome. Fermer la page pour effacer sa mémoire.
 
 ## Archives
 Une capture GitHub = un JSON contenant DOM HTML, métadonnées, inventaire de ressources, diagnostic et journal du nettoyage. Chemin bibliotheque-pages/ASIN/date-uuid.json ; jamais d'écrasement volontaire. Pas de publication du brut par l'outil. Après un envoi, synchroniser le dépôt local avec le BAT avant un nouveau travail Git.
