@@ -12,3 +12,6 @@ node_modules/
 Gestion_Git.ps1.avant-correctif-*.bak
 
 _metadata/
+
+# Captures DOM Amazon : stockage local uniquement, ne jamais versionner
+bibliotheque-pages/
